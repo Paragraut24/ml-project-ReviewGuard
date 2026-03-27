@@ -1,0 +1,16 @@
+# Virtual Environment
+mlproject/
+venv/
+__pycache__/
+
+# Datasets (Do not push heavy data)
+reviews.csv
+
+# Large Model Weights
+bert_model/pytorch_model.bin
+bert_model/model.safetensors
+bert_model/training_args.bin
+
+# OS Files
+.DS_Store
+*.pyc
