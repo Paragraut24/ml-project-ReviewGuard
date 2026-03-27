@@ -2,7 +2,9 @@
 
 A dual-layer AI system combining BERT language understanding with simulated Graph Neural Network (GNN) behavioral analysis to identify fraudulent product reviews in real-time.
 
-![ReviewGuard UI](static/screenshot.png) <!-- Remember to add a screenshot here later! -->
+![ReviewGuard UI](static/127.0.0.1_5000_ (1).png) <!-- Remember to add a screenshot here later! -->
+![ReviewGuard UI](static/127.0.0.1_5000_ (2).png) <!-- Remember to add a screenshot here later! -->
+![ReviewGuard UI](static/127.0.0.1_5000_ (3).png) <!-- Remember to add a screenshot here later! -->
 
 ## 🚀 Features
 - **BERT NLP Layer:** Fine-tuned on Amazon review data to detect unnatural sentiment and vague superlatives.
