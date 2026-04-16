@@ -14,3 +14,9 @@ bert_model/training_args.bin
 # OS Files
 .DS_Store
 *.pyc
+
+# Local secret/config files
+.env
+.env.*
+*.secrets.txt
+*Huggingface*.txt
