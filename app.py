@@ -1,62 +1,151 @@
 from flask import Flask, request, jsonify, render_template
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 from collections import Counter
 from pathlib import Path
-import re
-import numpy as np
 import hashlib
 import os
+import re
+
+import numpy as np
+import requests
 
 app = Flask(__name__)
 
 LOCAL_MODEL_DIR = Path("./bert_model")
 MODEL_WEIGHT_FILES = ("model.safetensors", "pytorch_model.bin")
-
-
-def load_classifier():
-    model_ref = None
-
-    if LOCAL_MODEL_DIR.exists() and any((LOCAL_MODEL_DIR / wf).exists() for wf in MODEL_WEIGHT_FILES):
-        model_ref = str(LOCAL_MODEL_DIR)
-        print(f"Loading local model from {model_ref} ...")
-    else:
-        model_ref = os.getenv("HF_MODEL_ID", "").strip()
-        if not model_ref:
-            raise RuntimeError(
-                "No local BERT weights found in ./bert_model and HF_MODEL_ID is not set. "
-                "Set HF_MODEL_ID to your hosted model (for example: username/reviewguard-bert)."
-            )
-        print(f"Loading remote model from Hugging Face: {model_ref} ...")
-
-    token = os.getenv("HF_TOKEN", "").strip() or None
-    model = AutoModelForSequenceClassification.from_pretrained(model_ref, token=token)
-    tokenizer = AutoTokenizer.from_pretrained(model_ref, token=token)
-    return pipeline("text-classification", model=model, tokenizer=tokenizer)
-
-
-print("Loading models...")
-classifier = load_classifier()
-print("Models loaded")
+_classifier = None
 
 
 STOP_WORDS = {
-    'i', 'the', 'a', 'is', 'it', 'and', 'to', 'in', 'for', 'this',
-    'was', 'with', 'my', 'of', 'very', 'so', 'not', 'be', 'am', 'are',
-    'that', 'have', 'on', 'at', 'by', 'an', 'as', 'do', 'if', 'or',
-    'its', 'we', 'you', 'he', 'she', 'they', 'all', 'one', 'but', 'had'
+    "i", "the", "a", "is", "it", "and", "to", "in", "for", "this",
+    "was", "with", "my", "of", "very", "so", "not", "be", "am", "are",
+    "that", "have", "on", "at", "by", "an", "as", "do", "if", "or",
+    "its", "we", "you", "he", "she", "they", "all", "one", "but", "had"
 }
 
 VAGUE_WORDS = [
-    'amazing', 'best', 'ever', 'perfect', 'love', 'great', 'awesome',
-    'excellent', 'fantastic', 'wonderful', 'superb', 'outstanding', 'incredible'
+    "amazing", "best", "ever", "perfect", "love", "great", "awesome",
+    "excellent", "fantastic", "wonderful", "superb", "outstanding", "incredible"
 ]
 
 NEGATIVE_WORDS = [
-    'but', 'however', 'although', 'except', 'issue', 'problem',
-    'disappointed', 'unfortunately', 'broke', 'returned', 'bad', 'poor',
-    'worse', 'lack', 'missing', 'slow', 'cheap', 'difficult', 'confusing',
-    'failed', 'stopped', 'cracked', 'damaged', 'wrong', 'late', 'never'
+    "but", "however", "although", "except", "issue", "problem",
+    "disappointed", "unfortunately", "broke", "returned", "bad", "poor",
+    "worse", "lack", "missing", "slow", "cheap", "difficult", "confusing",
+    "failed", "stopped", "cracked", "damaged", "wrong", "late", "never"
 ]
+
+
+def is_running_on_render():
+    return bool(os.getenv("RENDER")) or bool(os.getenv("RENDER_SERVICE_ID"))
+
+
+def has_local_model_weights():
+    return LOCAL_MODEL_DIR.exists() and any((LOCAL_MODEL_DIR / wf).exists() for wf in MODEL_WEIGHT_FILES)
+
+
+def get_model_backend():
+    configured = os.getenv("MODEL_BACKEND", "auto").strip().lower()
+    if configured in {"local", "hf_api"}:
+        return configured
+
+    if is_running_on_render():
+        return "hf_api"
+
+    if has_local_model_weights():
+        return "local"
+
+    return "hf_api"
+
+
+def load_local_classifier():
+    global _classifier
+    if _classifier is not None:
+        return _classifier
+
+    if not has_local_model_weights():
+        raise RuntimeError("Local model weights are missing from ./bert_model")
+
+    try:
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
+    except Exception as exc:
+        raise RuntimeError("Local backend requires transformers and torch installed.") from exc
+
+    model_ref = str(LOCAL_MODEL_DIR)
+    token = os.getenv("HF_TOKEN", "").strip() or None
+
+    model = AutoModelForSequenceClassification.from_pretrained(model_ref, token=token)
+    tokenizer = AutoTokenizer.from_pretrained(model_ref, token=token)
+    _classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
+    return _classifier
+
+
+def parse_hf_prediction(payload):
+    if isinstance(payload, list) and payload:
+        first = payload[0]
+        if isinstance(first, list) and first:
+            best = max(first, key=lambda row: row.get("score", 0.0))
+            return str(best.get("label", "")), float(best.get("score", 0.0))
+        if isinstance(first, dict):
+            return str(first.get("label", "")), float(first.get("score", 0.0))
+
+    if isinstance(payload, dict) and "label" in payload:
+        return str(payload.get("label", "")), float(payload.get("score", 0.0))
+
+    raise RuntimeError("Unexpected response format from Hugging Face inference API.")
+
+
+def infer_with_hf_api(text):
+    model_id = os.getenv("HF_MODEL_ID", "").strip()
+    if not model_id:
+        raise RuntimeError("HF_MODEL_ID is missing in environment variables.")
+
+    token = os.getenv("HF_TOKEN", "").strip()
+    headers = {"Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    response = requests.post(
+        f"https://api-inference.huggingface.co/models/{model_id}",
+        headers=headers,
+        json={
+            "inputs": text,
+            "options": {"wait_for_model": True}
+        },
+        timeout=90,
+    )
+
+    if response.status_code >= 400:
+        if response.status_code in {401, 403}:
+            raise RuntimeError("Hugging Face auth failed. Check HF_TOKEN and model visibility.")
+        if response.status_code == 404:
+            raise RuntimeError("Hugging Face model not found. Check HF_MODEL_ID.")
+        raise RuntimeError(f"Hugging Face API error ({response.status_code}).")
+
+    payload = response.json()
+    if isinstance(payload, dict) and payload.get("error"):
+        raise RuntimeError(f"Hugging Face API error: {payload['error']}")
+
+    return parse_hf_prediction(payload)
+
+
+def infer_with_local_pipeline(text):
+    classifier = load_local_classifier()
+    result = classifier(text, truncation=True, max_length=128)[0]
+    return str(result["label"]), float(result["score"])
+
+
+def get_bert_fake_score(text):
+    backend = get_model_backend()
+
+    if backend == "local":
+        label, score = infer_with_local_pipeline(text)
+    else:
+        label, score = infer_with_hf_api(text)
+
+    normalized = label.strip().upper()
+    fake_labels = {"LABEL_1", "FAKE", "CG", "DECEPTIVE"}
+    bert_fake_score = score if normalized in fake_labels else 1.0 - score
+    return bert_fake_score, backend
 
 
 def heuristic_boost(text):
@@ -64,7 +153,7 @@ def heuristic_boost(text):
     words = text.split()
     text_lower = text.lower()
 
-    if text.count('!') >= 3:
+    if text.count("!") >= 3:
         boost += 0.25
 
     matches = sum(1 for w in VAGUE_WORDS if w in text_lower)
@@ -72,13 +161,13 @@ def heuristic_boost(text):
         boost += 0.20
 
     word_counts = Counter(
-        w.strip('.,!?').lower() for w in words
-        if w.strip('.,!?').lower() not in STOP_WORDS and len(w.strip('.,!?')) > 2
+        w.strip(".,!?").lower() for w in words
+        if w.strip(".,!?").lower() not in STOP_WORDS and len(w.strip(".,!?")) > 2
     )
     if word_counts and word_counts.most_common(1)[0][1] >= 4:
         boost += 0.30
 
-    sentences = [s.strip() for s in text.replace('!', '.').split('.') if s.strip()]
+    sentences = [s.strip() for s in text.replace("!", ".").split(".") if s.strip()]
     if len(sentences) > 2 and len(set(sentences)) < len(sentences):
         boost += 0.15
 
@@ -98,106 +187,98 @@ def get_reasons(text, verdict):
     words = text.split()
     text_lower = text.lower()
 
-    # --- FAKE signals ---
-    exclamations = text.count('!')
+    exclamations = text.count("!")
     if exclamations >= 3:
-        reasons.append(f"Exclamation mark spam â€” {exclamations} found (strong fake signal)")
+        reasons.append(f"Exclamation mark spam - {exclamations} found (strong fake signal)")
 
     vague_matches = [w for w in VAGUE_WORDS if w in text_lower]
     if len(vague_matches) >= 3:
-        reasons.append(f"Vague superlative overload â€” words like '{', '.join(vague_matches[:3])}' detected")
+        reasons.append(f"Vague superlative overload - words like '{', '.join(vague_matches[:3])}' detected")
 
     word_counts = Counter(
-        w.strip('.,!?').lower() for w in words
-        if w.strip('.,!?').lower() not in STOP_WORDS and len(w.strip('.,!?')) > 2
+        w.strip(".,!?").lower() for w in words
+        if w.strip(".,!?").lower() not in STOP_WORDS and len(w.strip(".,!?")) > 2
     )
     if word_counts:
         top_word, top_count = word_counts.most_common(1)[0]
         if top_count >= 4:
-            reasons.append(f"Repetitive language â€” '{top_word}' used {top_count} times")
+            reasons.append(f"Repetitive language - '{top_word}' used {top_count} times")
 
-    sentences = [s.strip() for s in text.replace('!', '.').split('.') if s.strip()]
+    sentences = [s.strip() for s in text.replace("!", ".").split(".") if s.strip()]
     if len(sentences) > 2 and len(set(sentences)) < len(sentences):
-        reasons.append("Duplicate sentences detected â€” copy-paste pattern found")
+        reasons.append("Duplicate sentences detected - copy-paste pattern found")
 
     caps_words = [w for w in words if w.isupper() and len(w) > 2]
     if len(caps_words) >= 3:
-        reasons.append(f"ALL CAPS overuse â€” {len(caps_words)} words fully capitalised")
+        reasons.append(f"ALL CAPS overuse - {len(caps_words)} words fully capitalised")
 
     has_negative = any(w in text_lower for w in NEGATIVE_WORDS)
     if not has_negative and len(words) > 15:
-        reasons.append("No criticism found â€” genuine reviews almost always mention a flaw")
+        reasons.append("No criticism found - genuine reviews often mention at least one flaw")
 
-    # --- GENUINE signals (when no fake flags triggered) ---
-    specific_patterns = re.findall(r'\d+\s*(inch|cm|mm|hour|day|week|month|year|gb|kg|ft|star|%)', text_lower)
+    specific_patterns = re.findall(r"\d+\s*(inch|cm|mm|hour|day|week|month|year|gb|kg|ft|star|%)", text_lower)
     if specific_patterns:
-        reasons.append(f"Contains specific measurements or data â€” strong authenticity signal")
+        reasons.append("Contains specific measurements or data - strong authenticity signal")
 
     if has_negative and len(words) > 20:
-        reasons.append("Balanced review â€” mentions both positives and negatives")
+        reasons.append("Balanced review - mentions both positives and negatives")
 
     unique_ratio = len(set(w.lower() for w in words)) / max(len(words), 1)
     if unique_ratio > 0.75 and len(words) > 20:
-        reasons.append("High vocabulary diversity â€” natural writing pattern detected")
+        reasons.append("High vocabulary diversity - natural writing pattern detected")
 
     if len(words) > 30 and verdict == "GENUINE":
-        reasons.append("Detailed and descriptive â€” provides useful context for other buyers")
+        reasons.append("Detailed and descriptive - provides useful context for buyers")
 
-    # Fallback
     if not reasons:
         if verdict == "FAKE":
-            reasons.append("BERT model detected unnatural sentiment patterns in the text")
+            reasons.append("Model detected unnatural sentiment patterns in the text")
         else:
-            reasons.append("No fake signals detected â€” review appears authentic")
+            reasons.append("No fake signals detected - review appears authentic")
 
     return reasons
 
+
 def simulate_gnn_score(text):
     words = text.split()
-    sentences = [s.strip() for s in re.split(r'[.!?]', text) if s.strip()]
-    
-    score = 0.5  # neutral baseline
+    sentences = [s.strip() for s in re.split(r"[.!?]", text) if s.strip()]
 
-    # Signal 1: Review length (very short = suspicious)
+    score = 0.5
     word_count = len(words)
+
     if word_count < 12:
         score += 0.15
     elif word_count > 40:
         score -= 0.12
 
-    # Signal 2: Sentence length variance (low variance = bot-like)
     if len(sentences) > 1:
         lengths = [len(s.split()) for s in sentences]
         variance = np.var(lengths)
         if variance < 2.0:
-            score += 0.12  # all sentences same length = suspicious
+            score += 0.12
         elif variance > 10.0:
-            score -= 0.10  # natural varied writing
+            score -= 0.10
 
-    # Signal 3: Punctuation density
-    punct_count = sum(1 for c in text if c in '!?')
+    punct_count = sum(1 for c in text if c in "!?")
     punct_ratio = punct_count / max(word_count, 1)
     if punct_ratio > 0.15:
         score += 0.10
 
-    # Signal 4: Unique word ratio (low = repetitive = fake)
-    unique_ratio = len(set(w.lower().strip('.,!?') for w in words)) / max(word_count, 1)
+    unique_ratio = len(set(w.lower().strip(".,!?") for w in words)) / max(word_count, 1)
     if unique_ratio < 0.55:
         score += 0.13
     elif unique_ratio > 0.80:
         score -= 0.10
 
-    # Signal 5: Deterministic noise per review (simulates reviewer history)
     hash_val = int(hashlib.md5(text.encode()).hexdigest()[:4], 16)
-    noise = (hash_val / 65535 - 0.5) * 0.08  # Â±4% max noise
+    noise = (hash_val / 65535 - 0.5) * 0.08
     score += noise
 
     return round(min(max(score, 0.05), 0.97), 4)
 
 
 def predict_review(review_text):
-    result = classifier(review_text, truncation=True, max_length=128)[0]
-    bert_fake_score = result['score'] if result['label'] == 'LABEL_1' else 1 - result['score']
+    bert_fake_score, backend = get_bert_fake_score(review_text)
 
     gnn_score = simulate_gnn_score(review_text)
     fused_score = 0.65 * bert_fake_score + 0.35 * gnn_score
@@ -207,37 +288,52 @@ def predict_review(review_text):
     verdict = "FAKE" if final_score > 0.35 else "GENUINE"
     reasons = get_reasons(review_text, verdict)
 
-    # Show heuristic contribution when BERT is low
-    display_bert = round(bert_fake_score * 100, 1)
-    heuristic_pct = round(min(boost, 0.50) * 100, 1)
-
     return {
         "verdict": verdict,
         "confidence": round(final_score * 100, 1),
-        "bert_score": display_bert,
+        "bert_score": round(bert_fake_score * 100, 1),
         "gnn_score": round(gnn_score * 100, 1),
-        "heuristic_score": heuristic_pct,
-        "reasons": reasons
+        "heuristic_score": round(min(boost, 0.50) * 100, 1),
+        "reasons": reasons,
+        "model_backend": backend,
     }
 
-@app.route('/')
+
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/predict', methods=['POST'])
+@app.route("/health")
+def health():
+    return jsonify(
+        {
+            "status": "ok",
+            "model_backend": get_model_backend(),
+            "has_local_weights": has_local_model_weights(),
+        }
+    )
+
+
+@app.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json()
-    review = data.get('review', '').strip()
+    data = request.get_json(silent=True) or {}
+    review = str(data.get("review", "")).strip()
+
     if not review:
         return jsonify({"error": "No review text provided"}), 400
-    result = predict_review(review)
-    return jsonify(result)
+
+    try:
+        result = predict_review(review)
+        return jsonify(result)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    selected = get_model_backend()
+    print(f"Starting ReviewGuard with backend: {selected}")
+
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "1") == "1"
     app.run(host="0.0.0.0", port=port, debug=debug)
-
-
