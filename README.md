@@ -1,45 +1,52 @@
-# 🔍 ReviewGuard — Fake Review Detector
+# ReviewGuard - Fake Review Detector
 
-A dual-layer AI system combining BERT language understanding with simulated Graph Neural Network (GNN) behavioral analysis to identify fraudulent product reviews in real-time.
+ReviewGuard is a Flask + ML web app that detects whether a product review is likely fake or genuine.
 
-![ReviewGuard UI](static/screenshot.png)
-![ReviewGuard UI](static/screenshot2.png)
+## Current Model Stack
+- BERT text classifier (fine-tuned)
+- Simulated GNN behavioral score (rule-based approximation)
+- Heuristic booster + explainability reasons
 
+## Local Run
+1. Activate environment:
+   - Windows PowerShell: `mlproject\Scripts\Activate.ps1`
+2. Install dependencies:
+   - `pip install -r requirements.txt`
+3. Start app:
+   - `python app.py`
+4. Open:
+   - `http://127.0.0.1:5000`
 
-## 🚀 Features
-- **BERT NLP Layer:** Fine-tuned on Amazon review data to detect unnatural sentiment and vague superlatives.
-- **Simulated GNN Layer:** Approximates reviewer behavior (posting patterns, variance, punctuation density) via text proxies.
-- **Heuristic Safety Net:** Rule-based boosters to catch obvious exclamation spam and repetition.
-- **Explainable AI (XAI):** Provides a transparent breakdown of *why* a review was flagged.
-- **Full-Stack Web App:** Glassmorphism UI built with HTML/CSS/JS and a Flask Python backend.
+## Deployment (Render Free Tier)
+This repo is prepared for Render using:
+- `render.yaml`
+- `Procfile`
+- `runtime.txt`
 
-## 📊 Performance
-Evaluated on a balanced dataset of Amazon product reviews:
-- **Overall Accuracy:** 87.4%
-- **FAKE Precision:** 80.0% | **FAKE Recall:** 100.0%
-- **GENUINE Precision:** 99.0% | **GENUINE Recall:** 76.0%
+### Important model note
+Large model weight files are not tracked in this repo. In production, the app will:
+- use local `./bert_model` if weights exist, otherwise
+- load from Hugging Face via `HF_MODEL_ID` (required if local weights are missing).
 
-## 🛠️ Installation & Setup
+Set these Render environment variables:
+- `HF_MODEL_ID` = your hosted model id (example: `your-username/reviewguard-bert`)
+- `HF_TOKEN` = optional, only if your model repo is private
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/ReviewGuard.git
-   cd ReviewGuard
-```
-Create a virtual environment:
+### Render steps
+1. Push this code to GitHub.
+2. In Render, create a new **Web Service** from your repo.
+3. Render will detect `render.yaml` automatically.
+4. Add `HF_MODEL_ID` (and `HF_TOKEN` if needed).
+5. Deploy.
 
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate```
-Install dependencies:
+## API
+- `GET /` -> Web UI
+- `POST /predict` -> JSON input: `{ "review": "text" }`
 
-```bash
-pip install -r requirements.txt```
-Run the Flask server:
-
-```bash
-python app.py
-Access the web app: Open http://127.0.0.1:5000 in your browser.
-
-Note: Model weights and the raw reviews.csv dataset are excluded from this repository due to size limits.
-
+Response keys:
+- `verdict`
+- `confidence`
+- `bert_score`
+- `gnn_score`
+- `heuristic_score`
+- `reasons`

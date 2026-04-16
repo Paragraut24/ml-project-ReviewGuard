@@ -6,7 +6,7 @@ import os
 
 os.makedirs('static', exist_ok=True)
 
-# ── 1. Confusion Matrix ──
+# â”€â”€ 1. Confusion Matrix â”€â”€
 cm = np.array([[412, 38],
                [51,  399]])
 
@@ -31,10 +31,10 @@ plt.tight_layout()
 plt.savefig('static/confusion_matrix.png', dpi=150, bbox_inches='tight',
             facecolor='#0b1228')
 plt.close()
-print("Confusion matrix saved ✅")
+print("Confusion matrix saved âœ…")
 
 
-# ── 2. Model Accuracy Comparison Bar Chart ──
+# â”€â”€ 2. Model Accuracy Comparison Bar Chart â”€â”€
 models  = ['BERT\nOnly', 'GNN\nOnly', 'Fused\nModel']
 scores  = [87.5, 83.2, 91.1]
 colors  = ['#6c3bff', '#3b82f6', '#a78bfa']
@@ -65,4 +65,4 @@ plt.tight_layout()
 plt.savefig('static/accuracy_chart.png', dpi=150, bbox_inches='tight',
             facecolor='#0b1228')
 plt.close()
-print("Accuracy chart saved ✅")
+print("Accuracy chart saved âœ…")

@@ -1,19 +1,42 @@
 from flask import Flask, request, jsonify, render_template
-from transformers import pipeline
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 from collections import Counter
+from pathlib import Path
 import re
 import numpy as np
 import hashlib
+import os
 
 app = Flask(__name__)
 
+LOCAL_MODEL_DIR = Path("./bert_model")
+MODEL_WEIGHT_FILES = ("model.safetensors", "pytorch_model.bin")
+
+
+def load_classifier():
+    model_ref = None
+
+    if LOCAL_MODEL_DIR.exists() and any((LOCAL_MODEL_DIR / wf).exists() for wf in MODEL_WEIGHT_FILES):
+        model_ref = str(LOCAL_MODEL_DIR)
+        print(f"Loading local model from {model_ref} ...")
+    else:
+        model_ref = os.getenv("HF_MODEL_ID", "").strip()
+        if not model_ref:
+            raise RuntimeError(
+                "No local BERT weights found in ./bert_model and HF_MODEL_ID is not set. "
+                "Set HF_MODEL_ID to your hosted model (for example: username/reviewguard-bert)."
+            )
+        print(f"Loading remote model from Hugging Face: {model_ref} ...")
+
+    token = os.getenv("HF_TOKEN", "").strip() or None
+    model = AutoModelForSequenceClassification.from_pretrained(model_ref, token=token)
+    tokenizer = AutoTokenizer.from_pretrained(model_ref, token=token)
+    return pipeline("text-classification", model=model, tokenizer=tokenizer)
+
+
 print("Loading models...")
-classifier = pipeline(
-    'text-classification',
-    model='./bert_model',
-    tokenizer='./bert_model'
-)
-print("Models loaded ✅")
+classifier = load_classifier()
+print("Models loaded")
 
 
 STOP_WORDS = {
@@ -78,11 +101,11 @@ def get_reasons(text, verdict):
     # --- FAKE signals ---
     exclamations = text.count('!')
     if exclamations >= 3:
-        reasons.append(f"Exclamation mark spam — {exclamations} found (strong fake signal)")
+        reasons.append(f"Exclamation mark spam â€” {exclamations} found (strong fake signal)")
 
     vague_matches = [w for w in VAGUE_WORDS if w in text_lower]
     if len(vague_matches) >= 3:
-        reasons.append(f"Vague superlative overload — words like '{', '.join(vague_matches[:3])}' detected")
+        reasons.append(f"Vague superlative overload â€” words like '{', '.join(vague_matches[:3])}' detected")
 
     word_counts = Counter(
         w.strip('.,!?').lower() for w in words
@@ -91,41 +114,41 @@ def get_reasons(text, verdict):
     if word_counts:
         top_word, top_count = word_counts.most_common(1)[0]
         if top_count >= 4:
-            reasons.append(f"Repetitive language — '{top_word}' used {top_count} times")
+            reasons.append(f"Repetitive language â€” '{top_word}' used {top_count} times")
 
     sentences = [s.strip() for s in text.replace('!', '.').split('.') if s.strip()]
     if len(sentences) > 2 and len(set(sentences)) < len(sentences):
-        reasons.append("Duplicate sentences detected — copy-paste pattern found")
+        reasons.append("Duplicate sentences detected â€” copy-paste pattern found")
 
     caps_words = [w for w in words if w.isupper() and len(w) > 2]
     if len(caps_words) >= 3:
-        reasons.append(f"ALL CAPS overuse — {len(caps_words)} words fully capitalised")
+        reasons.append(f"ALL CAPS overuse â€” {len(caps_words)} words fully capitalised")
 
     has_negative = any(w in text_lower for w in NEGATIVE_WORDS)
     if not has_negative and len(words) > 15:
-        reasons.append("No criticism found — genuine reviews almost always mention a flaw")
+        reasons.append("No criticism found â€” genuine reviews almost always mention a flaw")
 
     # --- GENUINE signals (when no fake flags triggered) ---
     specific_patterns = re.findall(r'\d+\s*(inch|cm|mm|hour|day|week|month|year|gb|kg|ft|star|%)', text_lower)
     if specific_patterns:
-        reasons.append(f"Contains specific measurements or data — strong authenticity signal")
+        reasons.append(f"Contains specific measurements or data â€” strong authenticity signal")
 
     if has_negative and len(words) > 20:
-        reasons.append("Balanced review — mentions both positives and negatives")
+        reasons.append("Balanced review â€” mentions both positives and negatives")
 
     unique_ratio = len(set(w.lower() for w in words)) / max(len(words), 1)
     if unique_ratio > 0.75 and len(words) > 20:
-        reasons.append("High vocabulary diversity — natural writing pattern detected")
+        reasons.append("High vocabulary diversity â€” natural writing pattern detected")
 
     if len(words) > 30 and verdict == "GENUINE":
-        reasons.append("Detailed and descriptive — provides useful context for other buyers")
+        reasons.append("Detailed and descriptive â€” provides useful context for other buyers")
 
     # Fallback
     if not reasons:
         if verdict == "FAKE":
             reasons.append("BERT model detected unnatural sentiment patterns in the text")
         else:
-            reasons.append("No fake signals detected — review appears authentic")
+            reasons.append("No fake signals detected â€” review appears authentic")
 
     return reasons
 
@@ -166,7 +189,7 @@ def simulate_gnn_score(text):
 
     # Signal 5: Deterministic noise per review (simulates reviewer history)
     hash_val = int(hashlib.md5(text.encode()).hexdigest()[:4], 16)
-    noise = (hash_val / 65535 - 0.5) * 0.08  # ±4% max noise
+    noise = (hash_val / 65535 - 0.5) * 0.08  # Â±4% max noise
     score += noise
 
     return round(min(max(score, 0.05), 0.97), 4)
@@ -213,4 +236,8 @@ def predict():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv("PORT", "5000"))
+    debug = os.getenv("FLASK_DEBUG", "1") == "1"
+    app.run(host="0.0.0.0", port=port, debug=debug)
+
+

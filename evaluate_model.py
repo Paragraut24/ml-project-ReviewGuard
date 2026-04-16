@@ -1,3 +1,4 @@
+import argparse
 from transformers import pipeline
 from collections import Counter
 import numpy as np
@@ -11,14 +12,14 @@ from sklearn.metrics import (
 import matplotlib.pyplot as plt
 import os
 
-# ── Load model ──
+# â”€â”€ Load model â”€â”€
 print("Loading BERT model...")
 classifier = pipeline(
     'text-classification',
     model='./bert_model',
     tokenizer='./bert_model'
 )
-print("Model loaded ✅\n")
+print("Model loaded âœ…\n")
 
 STOP_WORDS = {
     'i','the','a','is','it','and','to','in','for','this','was','with',
@@ -118,7 +119,7 @@ def predict(text):
     return "FAKE" if final > 0.35 else "GENUINE"
 
 
-# ── Load dataset ──
+# â”€â”€ Load dataset â”€â”€
 print("Loading dataset...")
 df = pd.read_csv('reviews.csv')
 print(f"Columns found: {list(df.columns)}\n")
@@ -130,8 +131,18 @@ label_col  = next((c for c in df.columns if 'label' in c.lower() or 'fake' in c.
 print(f"Using text column  : '{text_col}'")
 print(f"Using label column : '{label_col}'\n")
 
-# Use a sample of 500 for speed — remove .sample() for full dataset
-sample = df.reset_index(drop=True)
+# Command line arguments for sample size
+parser = argparse.ArgumentParser(description='Evaluate ReviewGuard Model')
+parser.add_argument('--run-full', action='store_true', help='Run on the entire dataset')
+parser.add_argument('--sample', type=int, default=500, help='Number of reviews to sample (default: 500)')
+args = parser.parse_args()
+
+if args.run_full:
+    print(f"Running on FULL dataset ({len(df)} rows)...")
+    sample = df.reset_index(drop=True)
+else:
+    print(f"Running on a sample of {args.sample} reviews for speed...")
+    sample = df.sample(min(args.sample, len(df)), random_state=42).reset_index(drop=True)
 
 # Normalize labels to FAKE / GENUINE
 label_map = {}
@@ -152,7 +163,7 @@ print(f"Label mapping: {label_map}\n")
 sample['true_label'] = sample[label_col].map(label_map)
 sample = sample.dropna(subset=['true_label', text_col])
 
-# ── Run predictions ──
+# â”€â”€ Run predictions â”€â”€
 print(f"Running predictions on {len(sample)} reviews...")
 preds = []
 for i, row in sample.iterrows():
@@ -163,7 +174,7 @@ for i, row in sample.iterrows():
 
 sample['predicted'] = preds
 
-# ── Results ──
+# â”€â”€ Results â”€â”€
 y_true = sample['true_label']
 y_pred = sample['predicted']
 
@@ -173,7 +184,7 @@ print(f"  Overall Accuracy : {acc*100:.2f}%")
 print(f"{'='*45}\n")
 print(classification_report(y_true, y_pred, target_names=['FAKE','GENUINE']))
 
-# ── Save confusion matrix chart ──
+# â”€â”€ Save confusion matrix chart â”€â”€
 os.makedirs('static', exist_ok=True)
 cm = confusion_matrix(y_true, y_pred, labels=['FAKE','GENUINE'])
 
@@ -200,5 +211,6 @@ plt.tight_layout()
 plt.savefig('static/confusion_matrix.png', dpi=150,
             bbox_inches='tight', facecolor='#0b1228')
 plt.close()
-print("\nConfusion matrix saved to static/confusion_matrix.png ✅")
+print("\nConfusion matrix saved to static/confusion_matrix.png âœ…")
 print("Refresh your browser to see updated chart!")
+

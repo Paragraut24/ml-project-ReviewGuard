@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: reviewguard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 180
+    autoDeploy: true
+    envVars:
+      - key: HF_MODEL_ID
+        sync: false
+      - key: HF_TOKEN
+        sync: false

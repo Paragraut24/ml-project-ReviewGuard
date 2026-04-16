@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ReviewGuard — Fake Review Detector</title>
+  <title>ReviewGuard â€” Fake Review Detector</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
@@ -32,7 +32,7 @@
       overflow-x: hidden;
     }
 
-    /* ── Dot grid background ── */
+    /* â”€â”€ Dot grid background â”€â”€ */
     body::before {
       content: '';
       position: fixed; inset: 0; z-index: 0;
@@ -41,7 +41,7 @@
       pointer-events: none;
     }
 
-    /* ── Background blobs ── */
+    /* â”€â”€ Background blobs â”€â”€ */
     .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
     .blob {
       position: absolute; border-radius: 50%;
@@ -76,7 +76,7 @@
       50%      { transform: translate(30px,-50px) scale(0.95); }
     }
 
-    /* ── Glassmorphism ── */
+    /* â”€â”€ Glassmorphism â”€â”€ */
     .glass {
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(20px);
@@ -85,14 +85,14 @@
       border-radius: 24px;
     }
 
-    /* ── Lucide icon sizing ── */
+    /* â”€â”€ Lucide icon sizing â”€â”€ */
     svg.lucide {
       display: inline-block;
       vertical-align: middle;
       flex-shrink: 0;
     }
 
-    /* ── Nav ── */
+    /* â”€â”€ Nav â”€â”€ */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -133,7 +133,7 @@
     }
     .nav-badge svg { width: 13px; height: 13px; }
 
-    /* ── Hero ── */
+    /* â”€â”€ Hero â”€â”€ */
     .hero {
       min-height: 100vh; position: relative; z-index: 1;
       display: flex; flex-direction: column;
@@ -204,7 +204,7 @@
     .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
     .btn-secondary svg { width: 16px; height: 16px; }
 
-    /* ── Stats ── */
+    /* â”€â”€ Stats â”€â”€ */
     .stats {
       display: flex; max-width: 720px; width: 100%;
       margin: 64px auto 0;
@@ -223,7 +223,7 @@
     }
     .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* ── Section commons ── */
+    /* â”€â”€ Section commons â”€â”€ */
     .section-wrap { position: relative; z-index: 1; padding: 100px 24px; max-width: 1120px; margin: 0 auto; }
 
     .section-tag {
@@ -243,7 +243,7 @@
     }
     .section-sub { color: var(--text-muted); font-size: 16px; max-width: 500px; line-height: 1.75; }
 
-    /* ── Scroll reveal ── */
+    /* â”€â”€ Scroll reveal â”€â”€ */
     .reveal {
       opacity: 0; transform: translateY(30px);
       transition: opacity 0.65s ease, transform 0.65s ease;
@@ -254,7 +254,7 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
-    /* ── How it works ── */
+    /* â”€â”€ How it works â”€â”€ */
     .steps-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 20px; margin-top: 56px;
@@ -307,7 +307,7 @@
       display: none; /* show only on large screens via media query below */
     }
 
-    /* ── Features ── */
+    /* â”€â”€ Features â”€â”€ */
     .features-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 18px; margin-top: 56px;
@@ -361,7 +361,7 @@
 }
 
 
-    /* ── Detector section ── */
+    /* â”€â”€ Detector section â”€â”€ */
     #detector {
       position: relative; z-index: 1;
       padding: 100px 24px; display: flex; flex-direction: column; align-items: center;
@@ -461,7 +461,7 @@
     }
     .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* ── Result ── */
+    /* â”€â”€ Result â”€â”€ */
     .result-card {
       margin-top: 22px; padding: 28px; border-radius: 18px;
       display: none;
@@ -528,7 +528,7 @@
 .result-card.fake    .reason-dot { background: #f87171; }
 .result-card.genuine .reason-dot { background: #4ade80; }
 
-    /* ── Spinner ── */
+    /* â”€â”€ Spinner â”€â”€ */
     .spinner {
       width: 16px; height: 16px;
       border: 2px solid rgba(255,255,255,0.3);
@@ -538,7 +538,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Footer ── */
+    /* â”€â”€ Footer â”€â”€ */
     footer {
       position: relative; z-index: 1;
       text-align: center; padding: 48px 24px;
@@ -557,16 +557,16 @@
     .footer-sub { font-size: 13px; color: #334155; }
     .footer-sub span { color: #475569; }
 
-    /* ── Base animations ── */
+    /* â”€â”€ Base animations â”€â”€ */
     @keyframes fadeInUp   { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
     @keyframes fadeInDown { from { opacity:0; transform: translateY(-18px); } to { opacity:1; transform: translateY(0); } }
 
-    /* ── Scrollbar ── */
+    /* â”€â”€ Scrollbar â”€â”€ */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
 
-    /* ── Responsive ── */
+    /* â”€â”€ Responsive â”€â”€ */
     @media (max-width: 640px) {
       nav { padding: 14px 20px; }
       .nav-links { display: none; }
@@ -661,13 +661,13 @@
       <div class="step-icon icon-blue"><i data-lucide="brain"></i></div>
       <div class="step-num">Step 02</div>
       <h3>BERT Analysis</h3>
-      <p>A fine-tuned BERT model reads the review and scores linguistic patterns — vague praise, repetition, and sentiment signals.</p>
+      <p>A fine-tuned BERT model reads the review and scores linguistic patterns â€” vague praise, repetition, and sentiment signals.</p>
     </div>
     <div class="step-card reveal reveal-delay-3">
       <div class="step-icon icon-teal"><i data-lucide="share-2"></i></div>
       <div class="step-num">Step 03</div>
       <h3>GNN Layer</h3>
-      <p>A Graph Neural Network models reviewer behavior — posting frequency, account age, and review clustering patterns.</p>
+      <p>A Graph Neural Network models reviewer behavior â€” posting frequency, account age, and review clustering patterns.</p>
     </div>
     <div class="step-card reveal reveal-delay-4">
       <div class="step-icon icon-pink"><i data-lucide="layers"></i></div>
@@ -710,7 +710,7 @@
     <div class="feature-card reveal reveal-delay-2">
       <div class="feature-icon-wrap icon-amber"><i data-lucide="target"></i></div>
       <h3>Transparent Scoring</h3>
-      <p>Every result breaks down Fake Probability, BERT Score, and GNN Score — so you understand exactly why a review was flagged.</p>
+      <p>Every result breaks down Fake Probability, BERT Score, and GNN Score â€” so you understand exactly why a review was flagged.</p>
     </div>
     <div class="feature-card reveal reveal-delay-3">
       <div class="feature-icon-wrap icon-green"><i data-lucide="globe"></i></div>
@@ -725,7 +725,7 @@
   <div class="reveal">
     <div class="section-tag"><i data-lucide="bar-chart-2"></i> Performance</div>
     <div class="section-title">Model Evaluation</div>
-    <div class="section-sub">Tested on 900 real Amazon reviews — 450 fake, 450 genuine.</div>
+    <div class="section-sub">Tested on 900 real Amazon reviews â€” 450 fake, 450 genuine.</div>
   </div>
 
   <div class="charts-grid reveal">
@@ -804,23 +804,23 @@
         </div>
         <div class="result-metrics">
   <div class="metric">
-    <div class="metric-val" id="metricFake">—</div>
+    <div class="metric-val" id="metricFake">â€”</div>
     <div class="metric-label">Fake Probability</div>
   </div>
   <div class="metric">
-    <div class="metric-val" id="metricBert">—</div>
+    <div class="metric-val" id="metricBert">â€”</div>
     <div class="metric-label">BERT Score</div>
   </div>
   <div class="metric">
-    <div class="metric-val" id="metricHeuristic">—</div>
+    <div class="metric-val" id="metricHeuristic">â€”</div>
     <div class="metric-label">Heuristic Score</div>
   </div>
   <div class="metric">
-    <div class="metric-val" id="metricGnn">—</div>
+    <div class="metric-val" id="metricGnn">â€”</div>
     <div class="metric-label">GNN Score</div>
   </div>
 </div>
-show
+
         <!-- Reasons Panel -->
 <div class="reasons-panel" id="reasonsPanel">
   <div class="reasons-title">
@@ -842,27 +842,27 @@ show
     ReviewGuard
   </div>
   <div class="footer-sub">
-    Built with BERT + Graph Neural Networks &nbsp;·&nbsp;
+    Built with BERT + Graph Neural Networks &nbsp;Â·&nbsp;
     <span>ML Project 2026</span>
   </div>
 </footer>
 
 <script>
-  // ── Init Lucide icons ──
+  // â”€â”€ Init Lucide icons â”€â”€
   lucide.createIcons();
 
-  // ── Nav scroll effect ──
+  // â”€â”€ Nav scroll effect â”€â”€
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
   });
 
-  // ── Scroll reveal ──
+  // â”€â”€ Scroll reveal â”€â”€
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // ── Counter animation for stats ──
+  // â”€â”€ Counter animation for stats â”€â”€
   const counterObserver = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting && e.target.dataset.count) {
@@ -882,7 +882,7 @@ show
   }, { threshold: 0.5 });
   document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
 
-  // ── Samples ──
+  // â”€â”€ Samples â”€â”€
   const samples = {
     fake1: "Amazing product!! Best purchase EVER!! Everyone needs this!! So happy with this!! Will buy again!!",
     fake2: "I love this product. It is great and works perfectly. I love it. Great quality. I have one in my bathroom and one in my office.",
@@ -895,7 +895,7 @@ show
     document.getElementById('resultCard').style.display = 'none';
   }
 
-  // ── Analyze ──
+  // â”€â”€ Analyze â”€â”€
   async function analyzeReview() {
     const review = document.getElementById('reviewInput').value.trim();
     if (!review) return;
@@ -950,7 +950,7 @@ function showResult(data) {
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-  // ── Smooth nav scroll ──
+  // â”€â”€ Smooth nav scroll â”€â”€
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
@@ -962,3 +962,4 @@ function showResult(data) {
 </script>
 </body>
 </html>
+
