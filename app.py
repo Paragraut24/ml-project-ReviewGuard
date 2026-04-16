@@ -278,7 +278,14 @@ def simulate_gnn_score(text):
 
 
 def predict_review(review_text):
-    bert_fake_score, backend = get_bert_fake_score(review_text)
+    bert_warning = None
+    try:
+        bert_fake_score, backend = get_bert_fake_score(review_text)
+    except Exception as exc:
+        # Keep the app functional in production even when remote model auth/config breaks.
+        bert_fake_score = 0.50
+        backend = "fallback_bert_unavailable"
+        bert_warning = str(exc)
 
     gnn_score = simulate_gnn_score(review_text)
     fused_score = 0.65 * bert_fake_score + 0.35 * gnn_score
@@ -287,6 +294,8 @@ def predict_review(review_text):
 
     verdict = "FAKE" if final_score > 0.35 else "GENUINE"
     reasons = get_reasons(review_text, verdict)
+    if bert_warning:
+        reasons.insert(0, f"BERT temporarily unavailable. Using fallback scoring. Details: {bert_warning}")
 
     return {
         "verdict": verdict,
@@ -296,6 +305,7 @@ def predict_review(review_text):
         "heuristic_score": round(min(boost, 0.50) * 100, 1),
         "reasons": reasons,
         "model_backend": backend,
+        "bert_warning": bert_warning,
     }
 
 
@@ -311,6 +321,8 @@ def health():
             "status": "ok",
             "model_backend": get_model_backend(),
             "has_local_weights": has_local_model_weights(),
+            "hf_model_id_configured": bool(os.getenv("HF_MODEL_ID", "").strip()),
+            "hf_token_configured": bool(os.getenv("HF_TOKEN", "").strip()),
         }
     )
 

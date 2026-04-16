@@ -910,10 +910,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ review })
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = {};
+      }
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `Prediction failed with status ${res.status}`);
+      }
+
       showResult(data);
     } catch (e) {
-      alert('Error connecting to server. Make sure Flask is running.');
+      alert(e.message || 'Prediction failed. Please try again.');
     }
 
     btn.disabled = false;
@@ -940,7 +950,10 @@ function showResult(data) {
   // Render reasons
   document.getElementById('reasonsTitle').textContent = isFake ? 'Detected Signals' : 'Authenticity Signals';
   const list = document.getElementById('reasonsList');
-  list.innerHTML = data.reasons.map((r, i) =>
+  const reasons = Array.isArray(data.reasons) && data.reasons.length
+    ? data.reasons
+    : ['No explanation available for this prediction.'];
+  list.innerHTML = reasons.map((r, i) =>
     `<li style="animation-delay:${i * 0.08}s">
        <span class="reason-dot"></span>${r}
      </li>`
