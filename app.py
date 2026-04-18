@@ -619,6 +619,61 @@ def scrape():
     })
 
 
+
+
+@app.route("/bulk-analyze", methods=["POST"])
+def bulk_analyze():
+    data = request.get_json(silent=True) or {}
+    raw_text = str(data.get("reviews_text", "")).strip()
+
+    if not raw_text:
+        return jsonify({"error": "No reviews provided"}), 400
+
+    # Split on blank lines or "---" separators
+    import re as _re
+    items = [r.strip() for r in _re.split(r"\n\s*\n|---+", raw_text) if r.strip()]
+
+    if not items:
+        return jsonify({"error": "Could not parse any reviews from the input"}), 400
+
+    if len(items) > 15:
+        items = items[:15]
+
+    results = []
+    fake_count = 0
+    for text in items:
+        try:
+            r = predict_review(text)
+            if r["verdict"] == "FAKE":
+                fake_count += 1
+            results.append({
+                "text": text[:220] + ("..." if len(text) > 220 else ""),
+                "verdict": r["verdict"],
+                "confidence": r["confidence"],
+                "bert_score": r["bert_score"],
+                "gnn_score": r["gnn_score"],
+                "heuristic_score": r["heuristic_score"],
+                "reasons": r["reasons"],
+            })
+        except Exception:
+            pass
+
+    total = len(results)
+    fake_pct = round((fake_count / total) * 100, 1) if total else 0
+    trust_score = round(100 - fake_pct, 1)
+
+    return jsonify({
+        "platform": "manual",
+        "url": "bulk-paste",
+        "total_reviews_analysed": total,
+        "fake_count": fake_count,
+        "genuine_count": total - fake_count,
+        "fake_percentage": fake_pct,
+        "trust_score": trust_score,
+        "verdict": "HIGH RISK" if fake_pct >= 50 else ("MODERATE RISK" if fake_pct >= 25 else "LOW RISK"),
+        "reviews": results,
+    })
+
 if __name__ == "__main__":
     selected = get_model_backend()
     print(f"Starting ReviewGuard with backend: {selected}")
