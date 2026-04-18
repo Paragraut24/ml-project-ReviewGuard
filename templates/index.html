@@ -932,9 +932,11 @@
 
 function showResult(data) {
   const card = document.getElementById('resultCard');
-  const isFake = data.verdict === 'FAKE';
+  const normalizedVerdict = String(data.verdict || '').trim().toUpperCase();
+  const isFake = normalizedVerdict === 'FAKE';
 
-  card.className = 'result-card ' + (isFake ? 'fake' : 'genuine');
+  card.classList.remove('fake', 'genuine');
+  card.classList.add('result-card', isFake ? 'fake' : 'genuine');
 
   const iconEl = document.getElementById('verdictIcon');
   iconEl.setAttribute('data-lucide', isFake ? 'alert-triangle' : 'check-circle');
