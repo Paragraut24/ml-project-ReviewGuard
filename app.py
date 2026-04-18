@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import os
 import re
+import time
 
 import numpy as np
 import requests
@@ -129,43 +130,79 @@ def parse_hf_prediction(payload):
     raise RuntimeError("Unexpected response format from Hugging Face inference API.")
 
 
-def infer_with_hf_api(text):
+def infer_with_hf_api(text, max_retries=3, retry_delay=12):
+    """Call the HuggingFace Inference API with automatic retry on model cold-start."""
     model_id, token = get_hf_credentials()
     if not model_id:
-        raise RuntimeError("HF_MODEL_ID is missing in environment variables.")
+        raise RuntimeError("HF_MODEL_ID is missing. Set it on Render as an environment variable.")
 
-    headers = {"Accept": "application/json"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    response = requests.post(
-        f"https://api-inference.huggingface.co/models/{model_id}",
-        headers=headers,
-        json={
-            "inputs": text,
-            "options": {"wait_for_model": True}
-        },
-        timeout=90,
-    )
+    url = f"https://api-inference.huggingface.co/models/{model_id}"
+    payload_body = {
+        "inputs": text,
+        "options": {"wait_for_model": True, "use_cache": True},
+    }
 
-    if response.status_code >= 400:
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = requests.post(url, headers=headers, json=payload_body, timeout=90)
+        except requests.exceptions.Timeout:
+            last_error = "HuggingFace API timed out. The model may be warming up — please try again."
+            time.sleep(retry_delay)
+            continue
+        except requests.exceptions.RequestException as exc:
+            raise RuntimeError(f"Network error calling HuggingFace API: {exc}") from exc
+
+        # ---- 4xx hard errors — no point retrying ----
         if response.status_code in {401, 403}:
             raise RuntimeError(
-                "Hugging Face auth failed for private model access. "
-                "Verify HF_TOKEN has read access to HF_MODEL_ID."
+                "HuggingFace auth failed. Verify HF_TOKEN has read access to the model repo."
             )
         if response.status_code == 404:
             raise RuntimeError(
-                "Hugging Face model not found or inaccessible. "
-                "Check HF_MODEL_ID format (owner/repo) and repo visibility/token permissions."
+                "HuggingFace model not found. Check that HF_MODEL_ID is correct "
+                "(format: owner/repo) and the repository is public."
             )
-        raise RuntimeError(f"Hugging Face API error ({response.status_code}).")
+        if response.status_code >= 400 and response.status_code != 503:
+            raise RuntimeError(f"HuggingFace API error (HTTP {response.status_code}).")
 
-    payload = response.json()
-    if isinstance(payload, dict) and payload.get("error"):
-        raise RuntimeError(f"Hugging Face API error: {payload['error']}")
+        # ---- 503 = model loading; body may also be a 200 with an error key ----
+        try:
+            payload = response.json()
+        except ValueError:
+            raise RuntimeError("HuggingFace API returned a non-JSON response.")
 
-    return parse_hf_prediction(payload)
+        if isinstance(payload, dict) and payload.get("error"):
+            err_msg = payload["error"]
+            estimated = payload.get("estimated_time", retry_delay)
+            if "loading" in err_msg.lower() or response.status_code == 503:
+                # Model is cold-starting — wait and retry
+                wait = min(float(estimated) if estimated else retry_delay, 30)
+                last_error = f"Model warming up (attempt {attempt}/{max_retries})."
+                if attempt < max_retries:
+                    time.sleep(wait)
+                    continue
+                else:
+                    raise RuntimeError(
+                        "HuggingFace model is still loading after retries. "
+                        "Please wait a moment and try again."
+                    )
+            raise RuntimeError(f"HuggingFace API error: {err_msg}")
+
+        if response.status_code == 503:
+            last_error = f"HuggingFace returned 503 (attempt {attempt}/{max_retries})."
+            if attempt < max_retries:
+                time.sleep(retry_delay)
+                continue
+            raise RuntimeError("HuggingFace API unavailable (503). Please try again shortly.")
+
+        return parse_hf_prediction(payload)
+
+    raise RuntimeError(last_error or "HuggingFace API failed after all retries.")
 
 
 def infer_with_local_pipeline(text):
@@ -345,7 +382,9 @@ def predict_review(review_text):
     verdict = "FAKE" if final_score > 0.35 else "GENUINE"
     reasons = get_reasons(review_text, verdict)
     if bert_warning:
-        reasons.insert(0, f"BERT temporarily unavailable. Using fallback scoring. Details: {bert_warning}")
+        # Show a clean, user-friendly note — not the raw exception dump.
+        short_warning = bert_warning.split(".")[0] if bert_warning else "BERT unavailable"
+        reasons.insert(0, f"Note: BERT model unavailable — using heuristic scoring only. ({short_warning})")
 
     return {
         "verdict": verdict,
@@ -366,13 +405,22 @@ def home():
 
 @app.route("/health")
 def health():
+    model_id = (os.environ.get("HF_MODEL_ID") or "").strip()
+    token_configured = bool((os.environ.get("HF_TOKEN") or "").strip())
+    backend = get_model_backend()
     return jsonify(
         {
             "status": "ok",
-            "model_backend": get_model_backend(),
+            "model_backend": backend,
             "has_local_weights": has_local_model_weights(),
-            "hf_model_id_configured": bool((os.environ.get("HF_MODEL_ID") or "").strip()),
-            "hf_token_configured": bool((os.environ.get("HF_TOKEN") or "").strip()),
+            "hf_model_id": model_id if model_id else "NOT SET",
+            "hf_model_id_configured": bool(model_id),
+            "hf_token_configured": token_configured,
+            "note": (
+                "Token is optional for public repos. Set HF_TOKEN only for private repos."
+                if not token_configured
+                else "Token configured — used for auth and higher API rate limits."
+            ),
         }
     )
 
