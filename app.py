@@ -8,6 +8,7 @@ import time
 
 import numpy as np
 import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -438,6 +439,184 @@ def predict():
         return jsonify(result)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+# ── Scraping helpers ─────────────────────────────────────────────────────────
+
+_SCRAPE_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "https://www.google.com/",
+}
+
+
+def _detect_platform(url: str) -> str:
+    """Return 'amazon', 'flipkart', or 'unknown'."""
+    url_lower = url.lower()
+    if "amazon." in url_lower:
+        return "amazon"
+    if "flipkart.com" in url_lower:
+        return "flipkart"
+    return "unknown"
+
+
+def _amazon_reviews_url(url: str) -> str:
+    """Convert any Amazon product URL to its reviews page URL."""
+    # Extract ASIN — 10 char alphanum segment after /dp/ or /product/
+    asin_match = re.search(r"/(dp|product)/([A-Z0-9]{10})", url, re.IGNORECASE)
+    if not asin_match:
+        return url  # fall back to original URL
+    asin = asin_match.group(2)
+    # Determine domain (amazon.in vs amazon.com etc.)
+    domain_match = re.search(r"(amazon\.[a-z.]+)", url, re.IGNORECASE)
+    domain = domain_match.group(1) if domain_match else "amazon.com"
+    return f"https://www.{domain}/product-reviews/{asin}/?sortBy=recent&pageNumber=1"
+
+
+def scrape_amazon_reviews(url: str, max_reviews: int = 10) -> list:
+    """Scrape up to max_reviews review texts from an Amazon product page."""
+    reviews_url = _amazon_reviews_url(url)
+    try:
+        resp = requests.get(reviews_url, headers=_SCRAPE_HEADERS, timeout=20)
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError(f"Could not reach Amazon: {exc}")
+
+    if resp.status_code == 503:
+        raise RuntimeError(
+            "Amazon is blocking the scraper (503). "
+            "This is common on shared hosting IPs. Try again later or paste a review manually."
+        )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Amazon returned HTTP {resp.status_code}.")
+
+    soup = BeautifulSoup(resp.text, "lxml")
+
+    # Amazon renders review bodies in span[data-hook='review-body']
+    bodies = soup.select("span[data-hook='review-body'] span")
+    texts = [b.get_text(separator=" ", strip=True) for b in bodies if b.get_text(strip=True)]
+
+    if not texts:
+        # Check if Amazon showed a CAPTCHA page
+        if "captcha" in resp.text.lower() or "robot" in resp.text.lower():
+            raise RuntimeError(
+                "Amazon is showing a CAPTCHA challenge. "
+                "Automated scraping was blocked. Please paste individual reviews manually."
+            )
+        raise RuntimeError(
+            "No reviews found on this page. "
+            "Ensure the URL points to an Amazon product with reviews, or try a different product."
+        )
+
+    return texts[:max_reviews]
+
+
+def scrape_flipkart_reviews(url: str, max_reviews: int = 10) -> list:
+    """Scrape up to max_reviews review texts from a Flipkart product page."""
+    try:
+        resp = requests.get(url, headers=_SCRAPE_HEADERS, timeout=20)
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError(f"Could not reach Flipkart: {exc}")
+
+    if resp.status_code != 200:
+        raise RuntimeError(f"Flipkart returned HTTP {resp.status_code}.")
+
+    soup = BeautifulSoup(resp.text, "lxml")
+
+    # Flipkart review text containers (class names may vary by page version)
+    selectors = [
+        "div.ZmyHeo",       # review body (newer layout)
+        "div.t-ZTKy",       # older layout
+        "p.z9E0IG",         # another variant
+        "div._6K-7Co",      # fallback
+    ]
+    texts = []
+    for sel in selectors:
+        found = soup.select(sel)
+        if found:
+            texts = [el.get_text(separator=" ", strip=True) for el in found if el.get_text(strip=True)]
+            break
+
+    if not texts:
+        raise RuntimeError(
+            "No reviews found on this Flipkart page. "
+            "Make sure the URL is a product page with customer reviews."
+        )
+
+    return texts[:max_reviews]
+
+
+def scrape_reviews(url: str, max_reviews: int = 10) -> tuple:
+    """Detect platform and scrape reviews. Returns (platform, [review_texts])."""
+    platform = _detect_platform(url)
+    if platform == "amazon":
+        return platform, scrape_amazon_reviews(url, max_reviews)
+    elif platform == "flipkart":
+        return platform, scrape_flipkart_reviews(url, max_reviews)
+    else:
+        raise RuntimeError(
+            "Unsupported URL. Please provide an Amazon or Flipkart product URL."
+        )
+
+
+@app.route("/scrape", methods=["POST"])
+def scrape():
+    data = request.get_json(silent=True) or {}
+    url = str(data.get("url", "")).strip()
+    max_reviews = min(int(data.get("max_reviews", 8)), 15)  # cap at 15
+
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    if not url.startswith("http"):
+        return jsonify({"error": "Invalid URL. Must start with http:// or https://"}), 400
+
+    try:
+        platform, review_texts = scrape_reviews(url, max_reviews)
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 422
+    except Exception as exc:
+        return jsonify({"error": f"Scraping failed: {exc}"}), 500
+
+    # Analyse each review
+    results = []
+    fake_count = 0
+    for text in review_texts:
+        try:
+            r = predict_review(text)
+            if r["verdict"] == "FAKE":
+                fake_count += 1
+            results.append({
+                "text": text[:220] + ("..." if len(text) > 220 else ""),
+                "verdict": r["verdict"],
+                "confidence": r["confidence"],
+                "bert_score": r["bert_score"],
+                "gnn_score": r["gnn_score"],
+                "heuristic_score": r["heuristic_score"],
+                "reasons": r["reasons"],
+            })
+        except Exception:
+            pass  # skip failed individual predictions
+
+    total = len(results)
+    fake_pct = round((fake_count / total) * 100, 1) if total else 0
+    trust_score = round(100 - fake_pct, 1)
+
+    return jsonify({
+        "platform": platform,
+        "url": url,
+        "total_reviews_analysed": total,
+        "fake_count": fake_count,
+        "genuine_count": total - fake_count,
+        "fake_percentage": fake_pct,
+        "trust_score": trust_score,
+        "verdict": "HIGH RISK" if fake_pct >= 50 else ("MODERATE RISK" if fake_pct >= 25 else "LOW RISK"),
+        "reviews": results,
+    })
 
 
 if __name__ == "__main__":

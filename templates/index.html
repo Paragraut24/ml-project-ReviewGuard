@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ReviewGuard â€” Fake Review Detector</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236c3bff'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white'>R</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
@@ -561,16 +562,127 @@
     @keyframes fadeInUp   { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
     @keyframes fadeInDown { from { opacity:0; transform: translateY(-18px); } to { opacity:1; transform: translateY(0); } }
 
-    /* â”€â”€ Scrollbar â”€â”€ */
+    /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
 
-    /* â”€â”€ Responsive â”€â”€ */
+    /* ── Demo Tabs ── */
+    .demo-tabs {
+      display: flex; gap: 6px; margin-bottom: 28px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 5px;
+    }
+    .demo-tab {
+      flex: 1; padding: 11px 16px; border-radius: 10px;
+      border: none; background: transparent;
+      color: var(--text-muted); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.22s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      font-family: 'Inter', sans-serif;
+    }
+    .demo-tab svg { width: 15px; height: 15px; }
+    .demo-tab.active {
+      background: linear-gradient(135deg, var(--purple), var(--blue));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(108,59,255,0.3);
+    }
+    .demo-tab:not(.active):hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* URL input */
+    .url-input-wrap { position: relative; margin-bottom: 14px; }
+    .url-input {
+      width: 100%; padding: 15px 18px 15px 46px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: 14px;
+      color: #e2e8f0; font-size: 15px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .url-input:focus { border-color: rgba(108,59,255,0.5); box-shadow: 0 0 0 3px rgba(108,59,255,0.12); }
+    .url-input::placeholder { color: #334155; }
+    .url-input-icon {
+      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    .url-input-icon svg { width: 17px; height: 17px; }
+
+    .url-hint {
+      font-size: 12px; color: var(--text-muted);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 5px;
+    }
+    .url-hint svg { width: 12px; height: 12px; }
+
+    /* Scrape result */
+    .scrape-result { margin-top: 22px; display: none; animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+
+    .trust-banner {
+      padding: 22px 28px; border-radius: 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px; flex-wrap: wrap; gap: 16px;
+    }
+    .trust-banner.low    { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.3); }
+    .trust-banner.mid    { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+    .trust-banner.high   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3); }
+
+    .trust-left { display: flex; align-items: center; gap: 14px; }
+    .trust-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .trust-icon svg { width: 24px; height: 24px; }
+    .trust-banner.low  .trust-icon { background: rgba(34,197,94,0.2);  color: #4ade80; }
+    .trust-banner.mid  .trust-icon { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .trust-banner.high .trust-icon { background: rgba(239,68,68,0.2);  color: #f87171; }
+    .trust-banner.low  .trust-verdict { color: #4ade80; }
+    .trust-banner.mid  .trust-verdict { color: #fbbf24; }
+    .trust-banner.high .trust-verdict { color: #f87171; }
+
+    .trust-verdict { font-size: 20px; font-weight: 800; }
+    .trust-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+    .trust-stats { display: flex; gap: 18px; flex-wrap: wrap; }
+    .trust-stat { text-align: center; }
+    .trust-stat-num { font-size: 28px; font-weight: 800; }
+    .trust-stat-lbl { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .trust-banner.low  .trust-stat-num { color: #4ade80; }
+    .trust-banner.mid  .trust-stat-num { color: #fbbf24; }
+    .trust-banner.high .trust-stat-num { color: #f87171; }
+
+    /* Review list */
+    .review-items { display: flex; flex-direction: column; gap: 12px; }
+    .review-item {
+      padding: 18px 20px; border-radius: 14px;
+      background: rgba(0,0,0,0.2);
+      border-left: 3px solid transparent;
+      transition: transform 0.2s;
+    }
+    .review-item:hover { transform: translateX(3px); }
+    .review-item.fake    { border-left-color: #f87171; }
+    .review-item.genuine { border-left-color: #4ade80; }
+    .review-item-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
+    }
+    .review-item-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .review-item-badge svg { width: 11px; height: 11px; }
+    .review-item.fake    .review-item-badge { background: rgba(239,68,68,0.18); color: #f87171; }
+    .review-item.genuine .review-item-badge { background: rgba(34,197,94,0.18);  color: #4ade80; }
+    .review-item-conf { font-size: 12px; color: var(--text-muted); }
+    .review-item-text { font-size: 13px; color: #94a3b8; line-height: 1.65; }
+
+    /* ── Responsive ── */
     @media (max-width: 640px) {
       nav { padding: 14px 20px; }
       .nav-links { display: none; }
       .sample-grid { grid-template-columns: 1fr; }
+      .trust-banner { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -661,13 +773,13 @@
       <div class="step-icon icon-blue"><i data-lucide="brain"></i></div>
       <div class="step-num">Step 02</div>
       <h3>BERT Analysis</h3>
-      <p>A fine-tuned BERT model reads the review and scores linguistic patterns â€” vague praise, repetition, and sentiment signals.</p>
+      <p>A fine-tuned BERT model reads the review and scores linguistic patterns — vague praise, repetition, and sentiment signals.</p>
     </div>
     <div class="step-card reveal reveal-delay-3">
       <div class="step-icon icon-teal"><i data-lucide="share-2"></i></div>
       <div class="step-num">Step 03</div>
       <h3>GNN Layer</h3>
-      <p>A Graph Neural Network models reviewer behavior â€” posting frequency, account age, and review clustering patterns.</p>
+      <p>A Graph Neural Network models reviewer behavior — posting frequency, account age, and review clustering patterns.</p>
     </div>
     <div class="step-card reveal reveal-delay-4">
       <div class="step-icon icon-pink"><i data-lucide="layers"></i></div>
@@ -710,7 +822,7 @@
     <div class="feature-card reveal reveal-delay-2">
       <div class="feature-icon-wrap icon-amber"><i data-lucide="target"></i></div>
       <h3>Transparent Scoring</h3>
-      <p>Every result breaks down Fake Probability, BERT Score, and GNN Score â€” so you understand exactly why a review was flagged.</p>
+      <p>Every result breaks down Fake Probability, BERT Score, and GNN Score — so you understand exactly why a review was flagged.</p>
     </div>
     <div class="feature-card reveal reveal-delay-3">
       <div class="feature-icon-wrap icon-green"><i data-lucide="globe"></i></div>
@@ -725,7 +837,7 @@
   <div class="reveal">
     <div class="section-tag"><i data-lucide="bar-chart-2"></i> Performance</div>
     <div class="section-title">Model Evaluation</div>
-    <div class="section-sub">Tested on 900 real Amazon reviews â€” 450 fake, 450 genuine.</div>
+    <div class="section-sub">Tested on 900 real Amazon reviews — 450 fake, 450 genuine.</div>
   </div>
 
   <div class="charts-grid reveal">
@@ -759,78 +871,138 @@
     </div>
 
     <div class="detector-card reveal">
-      <div class="sample-label">
-        <i data-lucide="list"></i>
-        Try a sample review
-      </div>
-      <div class="sample-grid">
-        <button class="sample-btn" onclick="loadSample('fake1')">
-          <span class="badge badge-fake"><i data-lucide="x"></i> FAKE</span>
-          Spam exclamation review
+
+      <!-- Mode tabs -->
+      <div class="demo-tabs">
+        <button class="demo-tab active" id="tabText" onclick="switchTab('text')">
+          <i data-lucide="file-text"></i> Analyze Review
         </button>
-        <button class="sample-btn" onclick="loadSample('fake2')">
-          <span class="badge badge-fake"><i data-lucide="x"></i> FAKE</span>
-          Repetitive praise review
-        </button>
-        <button class="sample-btn" onclick="loadSample('real1')">
-          <span class="badge badge-real"><i data-lucide="check"></i> REAL</span>
-          Genuine purchase story
-        </button>
-        <button class="sample-btn" onclick="loadSample('real2')">
-          <span class="badge badge-real"><i data-lucide="check"></i> REAL</span>
-          Honest negative review
+        <button class="demo-tab" id="tabUrl" onclick="switchTab('url')">
+          <i data-lucide="link"></i> Scan Product URL
         </button>
       </div>
 
-      <div class="divider"></div>
-
-      <textarea
-        id="reviewInput"
-        class="input-area"
-        placeholder="Paste a product review here to analyze it for authenticity..."
-      ></textarea>
-
-      <button class="analyze-btn" id="analyzeBtn" onclick="analyzeReview()">
-        <i data-lucide="search"></i>
-        Analyze Review
-      </button>
-
-      <div class="result-card" id="resultCard">
-        <div class="result-verdict">
+      <!-- TAB: Text analysis -->
+      <div class="tab-panel active" id="panelText">
+        <div class="sample-label">
+          <i data-lucide="list"></i>
+          Try a sample review
+        </div>
+        <div class="sample-grid">
+          <button class="sample-btn" onclick="loadSample('fake1')">
+            <span class="badge badge-fake"><i data-lucide="x"></i> FAKE</span>
+            Spam exclamation review
+          </button>
+          <button class="sample-btn" onclick="loadSample('fake2')">
+            <span class="badge badge-fake"><i data-lucide="x"></i> FAKE</span>
+            Repetitive praise review
+          </button>
+          <button class="sample-btn" onclick="loadSample('real1')">
+            <span class="badge badge-real"><i data-lucide="check"></i> REAL</span>
+            Genuine purchase story
+          </button>
+          <button class="sample-btn" onclick="loadSample('real2')">
+            <span class="badge badge-real"><i data-lucide="check"></i> REAL</span>
+            Honest negative review
+          </button>
+        </div>
+        <div class="divider"></div>
+        <textarea
+          id="reviewInput"
+          class="input-area"
+          placeholder="Paste a product review here to analyze it for authenticity..."
+        ></textarea>
+        <button class="analyze-btn" id="analyzeBtn" onclick="analyzeReview()">
+          <i data-lucide="search"></i>
+          Analyze Review
+        </button>
+        <div class="result-card" id="resultCard">
+          <div class="result-verdict">
           <div class="verdict-icon-wrap" id="verdictIconWrap">
             <i id="verdictIcon" data-lucide="alert-triangle"></i>
           </div>
           <span id="verdictText"></span>
         </div>
         <div class="result-metrics">
-  <div class="metric">
-    <div class="metric-val" id="metricFake">â€”</div>
-    <div class="metric-label">Fake Probability</div>
-  </div>
-  <div class="metric">
-    <div class="metric-val" id="metricBert">â€”</div>
-    <div class="metric-label">BERT Score</div>
-  </div>
-  <div class="metric">
-    <div class="metric-val" id="metricHeuristic">â€”</div>
-    <div class="metric-label">Heuristic Score</div>
-  </div>
-  <div class="metric">
-    <div class="metric-val" id="metricGnn">â€”</div>
-    <div class="metric-label">GNN Score</div>
-  </div>
-</div>
+          <div class="metric">
+            <div class="metric-val" id="metricFake">—</div>
+            <div class="metric-label">Fake Probability</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="metricBert">—</div>
+            <div class="metric-label">BERT Score</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="metricHeuristic">—</div>
+            <div class="metric-label">Heuristic Score</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="metricGnn">—</div>
+            <div class="metric-label">GNN Score</div>
+          </div>
+        </div>
 
         <!-- Reasons Panel -->
-<div class="reasons-panel" id="reasonsPanel">
-  <div class="reasons-title">
-    <i data-lucide="list-checks"></i>
-    <span id="reasonsTitle">Detected Signals</span>
-  </div>
-  <ul class="reasons-list" id="reasonsList"></ul>
-</div>
-
+        <div class="reasons-panel" id="reasonsPanel">
+          <div class="reasons-title">
+            <i data-lucide="list-checks"></i>
+            <span id="reasonsTitle">Detected Signals</span>
+          </div>
+          <ul class="reasons-list" id="reasonsList"></ul>
+        </div>
+        </div>
       </div>
+
+      <!-- TAB: URL scanning -->
+      <div class="tab-panel" id="panelUrl">
+        <div class="url-input-wrap">
+          <div class="url-input-icon"><i data-lucide="link"></i></div>
+          <input
+            type="url"
+            id="urlInput"
+            class="url-input"
+            placeholder="https://www.amazon.in/dp/B09... or flipkart.com/..."
+          />
+        </div>
+        <div class="url-hint">
+          <i data-lucide="info"></i>
+          Paste an Amazon or Flipkart product URL. Up to 8 reviews will be analysed.
+        </div>
+        <button class="analyze-btn" id="scanBtn" onclick="scanUrl()">
+          <i data-lucide="scan-search"></i>
+          Scan Product Reviews
+        </button>
+
+        <div class="scrape-result" id="scrapeResult">
+          <!-- Trust banner -->
+          <div class="trust-banner" id="trustBanner">
+            <div class="trust-left">
+              <div class="trust-icon" id="trustIcon"><i data-lucide="shield"></i></div>
+              <div>
+                <div class="trust-verdict" id="trustVerdict"></div>
+                <div class="trust-sub" id="trustSub"></div>
+              </div>
+            </div>
+            <div class="trust-stats">
+              <div class="trust-stat">
+                <div class="trust-stat-num" id="statFakePct"></div>
+                <div class="trust-stat-lbl">Fake</div>
+              </div>
+              <div class="trust-stat">
+                <div class="trust-stat-num" id="statTotal"></div>
+                <div class="trust-stat-lbl">Reviews</div>
+              </div>
+              <div class="trust-stat">
+                <div class="trust-stat-num" id="statTrust"></div>
+                <div class="trust-stat-lbl">Trust</div>
+              </div>
+            </div>
+          </div>
+          <!-- Per-review list -->
+          <div class="review-items" id="reviewItems"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -842,27 +1014,27 @@
     ReviewGuard
   </div>
   <div class="footer-sub">
-    Built with BERT + Graph Neural Networks &nbsp;Â·&nbsp;
+    Built with BERT + Graph Neural Networks &nbsp;·&nbsp;
     <span>ML Project 2026</span>
   </div>
 </footer>
 
 <script>
-  // â”€â”€ Init Lucide icons â”€â”€
+  // ── Init Lucide icons ──
   lucide.createIcons();
 
-  // â”€â”€ Nav scroll effect â”€â”€
+  // ── Nav scroll effect ──
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
   });
 
-  // â”€â”€ Scroll reveal â”€â”€
+  // ── Scroll reveal ──
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // â”€â”€ Counter animation for stats â”€â”€
+  // ── Counter animation for stats ──
   const counterObserver = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting && e.target.dataset.count) {
@@ -882,7 +1054,16 @@
   }, { threshold: 0.5 });
   document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
 
-  // â”€â”€ Samples â”€â”€
+  // ── Tab switching ──
+  function switchTab(tab) {
+    document.getElementById('panelText').classList.toggle('active', tab === 'text');
+    document.getElementById('panelUrl').classList.toggle('active', tab === 'url');
+    document.getElementById('tabText').classList.toggle('active', tab === 'text');
+    document.getElementById('tabUrl').classList.toggle('active', tab === 'url');
+    lucide.createIcons();
+  }
+
+  // ── Samples ──
   const samples = {
     fake1: "Amazing product!! Best purchase EVER!! Everyone needs this!! So happy with this!! Will buy again!!",
     fake2: "I love this product. It is great and works perfectly. I love it. Great quality. I have one in my bathroom and one in my office.",
@@ -895,15 +1076,13 @@
     document.getElementById('resultCard').style.display = 'none';
   }
 
-  // â”€â”€ Analyze â”€â”€
+  // ── Analyze single review ──
   async function analyzeReview() {
     const review = document.getElementById('reviewInput').value.trim();
     if (!review) return;
-
     const btn = document.getElementById('analyzeBtn');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Analyzing...';
-
     try {
       const res = await fetch('/predict', {
         method: 'POST',
@@ -911,58 +1090,12 @@
         body: JSON.stringify({ review })
       });
       let data = {};
-      try {
-        data = await res.json();
-      } catch (_) {
-        data = {};
-      }
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error || `Prediction failed with status ${res.status}`);
-      }
-
+      try { data = await res.json(); } catch (_) { data = {}; }
+      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
       showResult(data);
     } catch (e) {
       alert(e.message || 'Prediction failed. Please try again.');
     }
-
-    btn.disabled = false;
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Analyze Review';
-  }
-
-function showResult(data) {
-  const card = document.getElementById('resultCard');
-  const normalizedVerdict = String(data.verdict || '').trim().toUpperCase();
-  const isFake = normalizedVerdict === 'FAKE';
-
-  card.classList.remove('fake', 'genuine');
-  card.classList.add('result-card', isFake ? 'fake' : 'genuine');
-
-  const iconEl = document.getElementById('verdictIcon');
-  iconEl.setAttribute('data-lucide', isFake ? 'alert-triangle' : 'check-circle');
-  lucide.createIcons({ nodes: [iconEl] });
-
-  document.getElementById('verdictText').textContent = isFake ? 'Fake Review Detected' : 'Genuine Review';
-  document.getElementById('metricFake').textContent = data.confidence + '%';
-  document.getElementById('metricBert').textContent = data.bert_score + '%';
-  document.getElementById('metricGnn').textContent  = data.gnn_score  + '%';
-  document.getElementById('metricHeuristic').textContent = data.heuristic_score + '%';
-
-
-  // Render reasons
-  document.getElementById('reasonsTitle').textContent = isFake ? 'Detected Signals' : 'Authenticity Signals';
-  const list = document.getElementById('reasonsList');
-  const reasons = Array.isArray(data.reasons) && data.reasons.length
-    ? data.reasons
-    : ['No explanation available for this prediction.'];
-  list.innerHTML = reasons.map((r, i) =>
-    `<li style="animation-delay:${i * 0.08}s">
-       <span class="reason-dot"></span>${r}
-     </li>`
-  ).join('');
-
-  card.style.display = 'block';
-  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
   // â”€â”€ Smooth nav scroll â”€â”€
