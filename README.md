@@ -12,9 +12,15 @@ ReviewGuard is a Flask + ML web app that detects whether a product review is lik
    - Windows PowerShell: `mlproject\Scripts\Activate.ps1`
 2. Install dependencies:
    - `pip install -r requirements.txt`
-3. Start app:
+3. (Optional for private HF pipeline mode) Install local ML runtime:
+   - `pip install -r requirements.local-ml.txt`
+4. Choose backend:
+   - `$env:MODEL_BACKEND="local"` (use local `./bert_model`)
+   - `$env:MODEL_BACKEND="pipeline"` (download private model using `HF_MODEL_ID` + `HF_TOKEN`)
+   - `$env:MODEL_BACKEND="hf_api"` (lightweight inference API mode)
+5. Start app:
    - `python app.py`
-4. Open:
+6. Open:
    - `http://127.0.0.1:5000`
 
 ## Deployment (Render Free Tier)

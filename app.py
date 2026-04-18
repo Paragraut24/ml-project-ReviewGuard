@@ -13,6 +13,7 @@ app = Flask(__name__)
 LOCAL_MODEL_DIR = Path("./bert_model")
 MODEL_WEIGHT_FILES = ("model.safetensors", "pytorch_model.bin")
 _classifier = None
+_remote_classifier = None
 
 
 STOP_WORDS = {
@@ -35,8 +36,14 @@ NEGATIVE_WORDS = [
 ]
 
 
+def get_hf_credentials():
+    model_id = (os.environ.get("HF_MODEL_ID") or "").strip()
+    token = (os.environ.get("HF_TOKEN") or "").strip()
+    return model_id, token
+
+
 def is_running_on_render():
-    return bool(os.getenv("RENDER")) or bool(os.getenv("RENDER_SERVICE_ID"))
+    return bool(os.environ.get("RENDER")) or bool(os.environ.get("RENDER_SERVICE_ID"))
 
 
 def has_local_model_weights():
@@ -44,8 +51,8 @@ def has_local_model_weights():
 
 
 def get_model_backend():
-    configured = os.getenv("MODEL_BACKEND", "auto").strip().lower()
-    if configured in {"local", "hf_api"}:
+    configured = (os.environ.get("MODEL_BACKEND") or "auto").strip().lower()
+    if configured in {"local", "pipeline", "hf_api"}:
         return configured
 
     if is_running_on_render():
@@ -54,7 +61,7 @@ def get_model_backend():
     if has_local_model_weights():
         return "local"
 
-    return "hf_api"
+    return "pipeline"
 
 
 def load_local_classifier():
@@ -71,12 +78,40 @@ def load_local_classifier():
         raise RuntimeError("Local backend requires transformers and torch installed.") from exc
 
     model_ref = str(LOCAL_MODEL_DIR)
-    token = os.getenv("HF_TOKEN", "").strip() or None
+    _, token = get_hf_credentials()
+    token = token or None
 
     model = AutoModelForSequenceClassification.from_pretrained(model_ref, token=token)
     tokenizer = AutoTokenizer.from_pretrained(model_ref, token=token)
     _classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
     return _classifier
+
+
+def load_remote_pipeline_classifier():
+    global _remote_classifier
+    if _remote_classifier is not None:
+        return _remote_classifier
+
+    model_id, token = get_hf_credentials()
+    if not model_id:
+        raise RuntimeError("HF_MODEL_ID is missing in environment variables.")
+    if not token:
+        raise RuntimeError("HF_TOKEN is missing in environment variables for pipeline mode.")
+
+    try:
+        from transformers import pipeline
+    except Exception as exc:
+        raise RuntimeError(
+            "Pipeline mode requires transformers + torch. Install requirements.local-ml.txt."
+        ) from exc
+
+    _remote_classifier = pipeline(
+        "text-classification",
+        model=model_id,
+        tokenizer=model_id,
+        token=token,
+    )
+    return _remote_classifier
 
 
 def parse_hf_prediction(payload):
@@ -95,11 +130,10 @@ def parse_hf_prediction(payload):
 
 
 def infer_with_hf_api(text):
-    model_id = os.getenv("HF_MODEL_ID", "").strip()
+    model_id, token = get_hf_credentials()
     if not model_id:
         raise RuntimeError("HF_MODEL_ID is missing in environment variables.")
 
-    token = os.getenv("HF_TOKEN", "").strip()
     headers = {"Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -116,9 +150,15 @@ def infer_with_hf_api(text):
 
     if response.status_code >= 400:
         if response.status_code in {401, 403}:
-            raise RuntimeError("Hugging Face auth failed. Check HF_TOKEN and model visibility.")
+            raise RuntimeError(
+                "Hugging Face auth failed for private model access. "
+                "Verify HF_TOKEN has read access to HF_MODEL_ID."
+            )
         if response.status_code == 404:
-            raise RuntimeError("Hugging Face model not found. Check HF_MODEL_ID.")
+            raise RuntimeError(
+                "Hugging Face model not found or inaccessible. "
+                "Check HF_MODEL_ID format (owner/repo) and repo visibility/token permissions."
+            )
         raise RuntimeError(f"Hugging Face API error ({response.status_code}).")
 
     payload = response.json()
@@ -134,13 +174,23 @@ def infer_with_local_pipeline(text):
     return str(result["label"]), float(result["score"])
 
 
+def infer_with_pipeline(text):
+    classifier = load_remote_pipeline_classifier()
+    result = classifier(text, truncation=True, max_length=128)[0]
+    return str(result["label"]), float(result["score"])
+
+
 def get_bert_fake_score(text):
     backend = get_model_backend()
 
     if backend == "local":
         label, score = infer_with_local_pipeline(text)
-    else:
+    elif backend == "pipeline":
+        label, score = infer_with_pipeline(text)
+    elif backend == "hf_api":
         label, score = infer_with_hf_api(text)
+    else:
+        raise RuntimeError(f"Unsupported MODEL_BACKEND '{backend}'.")
 
     normalized = label.strip().upper()
     fake_labels = {"LABEL_1", "FAKE", "CG", "DECEPTIVE"}
@@ -321,8 +371,8 @@ def health():
             "status": "ok",
             "model_backend": get_model_backend(),
             "has_local_weights": has_local_model_weights(),
-            "hf_model_id_configured": bool(os.getenv("HF_MODEL_ID", "").strip()),
-            "hf_token_configured": bool(os.getenv("HF_TOKEN", "").strip()),
+            "hf_model_id_configured": bool((os.environ.get("HF_MODEL_ID") or "").strip()),
+            "hf_token_configured": bool((os.environ.get("HF_TOKEN") or "").strip()),
         }
     )
 
@@ -346,6 +396,6 @@ if __name__ == "__main__":
     selected = get_model_backend()
     print(f"Starting ReviewGuard with backend: {selected}")
 
-    port = int(os.getenv("PORT", "5000"))
-    debug = os.getenv("FLASK_DEBUG", "1") == "1"
+    port = int((os.environ.get("PORT") or "5000").strip())
+    debug = (os.environ.get("FLASK_DEBUG") or "1").strip() == "1"
     app.run(host="0.0.0.0", port=port, debug=debug)
