@@ -327,42 +327,87 @@ def get_reasons(text, verdict):
     return reasons
 
 
-def simulate_gnn_score(text):
+
+# GNN Behavioral Feature Model
+_TEMPORAL_WORDS = [
+    "yesterday", "last week", "last month", "after", "days later",
+    "weeks later", "month ago", "year ago", "so far", "since",
+    "update:", "edit:", "follow up", "bought", "ordered", "arrived",
+]
+
+_PRODUCT_SPECIFICS = re.compile(
+    r"\b(\d+\s*(gb|tb|mb|hz|inch|cm|mm|kg|lb|watt|mah|rpm|fps|mp|ms|litre)s?"
+    r"|model\s+\w+|version\s+[\d.]+)\b",
+    re.IGNORECASE,
+)
+
+_OPINION_PHRASES = re.compile(
+    r"\b(i (think|believe|feel|found|noticed|realized|expected|was|am|have)|"
+    r"in my (opinion|experience|view)|personally|for me|"
+    r"my (wife|husband|kid|son|daughter|family|dog))\b",
+    re.IGNORECASE,
+)
+
+_GENERIC_PHRASES = [
+    "highly recommend", "five stars", "5 stars", "best ever", "money well spent",
+    "worth every penny", "do not hesitate", "must buy", "must have",
+    "game changer", "life changing", "changed my life",
+    "love this product", "amazing product", "great product", "quality product",
+]
+
+
+def compute_gnn_features(text):
     words = text.split()
-    sentences = [s.strip() for s in re.split(r"[.!?]", text) if s.strip()]
+    word_count = max(len(words), 1)
+    text_lower = text.lower()
+    sentences = [s.strip() for s in re.split(r"[.!?]+", text) if s.strip()]
+    tokens = [w.strip(".,!?\"'").lower() for w in words if len(w.strip(".,!?\"'")) > 1]
+    ttr = len(set(tokens)) / max(len(tokens), 1)
+    sent_lens = [len(s.split()) for s in sentences]
+    sent_variance = float(np.var(sent_lens)) if len(sent_lens) > 1 else 0.0
+    punct_abuse = sum(1 for c in text if c in "!?") / word_count
+    length_penalty = 1.0 if word_count < 10 else (0.3 if word_count < 20 else 0.0)
+    specificity_hits = len(_PRODUCT_SPECIFICS.findall(text))
+    temporal_hits = sum(1 for w in _TEMPORAL_WORDS if w in text_lower)
+    opinion_hits = len(_OPINION_PHRASES.findall(text))
+    generic_hits = sum(1 for p in _GENERIC_PHRASES if p in text_lower)
+    negative_hits = sum(1 for w in NEGATIVE_WORDS if w in text_lower)
+    pos_count = sum(1 for w in VAGUE_WORDS if w in text_lower)
+    pos_neg_ratio = pos_count / max(negative_hits, 1)
+    caps_ratio = sum(1 for w in words if w.isupper() and len(w) > 2) / word_count
+    has_question = int("?" in text)
+    return {
+        "ttr": ttr, "sent_variance": sent_variance, "punct_abuse": punct_abuse,
+        "length_penalty": length_penalty, "specificity_hits": specificity_hits,
+        "temporal_hits": temporal_hits, "opinion_hits": opinion_hits,
+        "generic_hits": generic_hits, "negative_hits": negative_hits,
+        "pos_neg_ratio": pos_neg_ratio, "caps_ratio": caps_ratio,
+        "has_question": has_question,
+    }
 
-    score = 0.5
-    word_count = len(words)
 
-    if word_count < 12:
-        score += 0.15
-    elif word_count > 40:
-        score -= 0.12
-
-    if len(sentences) > 1:
-        lengths = [len(s.split()) for s in sentences]
-        variance = np.var(lengths)
-        if variance < 2.0:
-            score += 0.12
-        elif variance > 10.0:
-            score -= 0.10
-
-    punct_count = sum(1 for c in text if c in "!?")
-    punct_ratio = punct_count / max(word_count, 1)
-    if punct_ratio > 0.15:
-        score += 0.10
-
-    unique_ratio = len(set(w.lower().strip(".,!?") for w in words)) / max(word_count, 1)
-    if unique_ratio < 0.55:
-        score += 0.13
-    elif unique_ratio > 0.80:
-        score -= 0.10
-
-    hash_val = int(hashlib.md5(text.encode()).hexdigest()[:4], 16)
-    noise = (hash_val / 65535 - 0.5) * 0.08
-    score += noise
-
-    return round(min(max(score, 0.05), 0.97), 4)
+def simulate_gnn_score(text):
+    """Behavioral fake probability [0=genuine,1=fake] via 12 weighted GNN features."""
+    f = compute_gnn_features(text)
+    score = 0.0
+    # Fake signals
+    if f['ttr'] < 0.50:             score += 0.20
+    elif f['ttr'] < 0.65:           score += 0.08
+    if f['sent_variance'] < 1.5:    score += 0.12
+    if f['punct_abuse'] > 0.20:     score += 0.15
+    elif f['punct_abuse'] > 0.10:   score += 0.06
+    score += f['length_penalty'] * 0.18
+    if f['generic_hits'] >= 2:      score += 0.18
+    elif f['generic_hits'] == 1:    score += 0.07
+    if f['negative_hits'] == 0 and f['pos_neg_ratio'] > 3: score += 0.12
+    if f['caps_ratio'] > 0.25:      score += 0.10
+    # Genuine signals
+    score -= min(f['specificity_hits'] * 0.10, 0.25)
+    score -= min(f['temporal_hits'] * 0.08, 0.20)
+    score -= min(f['opinion_hits'] * 0.07, 0.18)
+    score -= min(f['negative_hits'] * 0.06, 0.18)
+    if f['has_question']: score -= 0.06
+    return round(min(max(score + 0.38, 0.05), 0.97), 4)
 
 
 def predict_review(review_text):
