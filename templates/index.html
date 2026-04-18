@@ -1020,21 +1020,17 @@
 </footer>
 
 <script>
-  // ── Init Lucide icons ──
   lucide.createIcons();
 
-  // ── Nav scroll effect ──
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
   });
 
-  // ── Scroll reveal ──
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // ── Counter animation for stats ──
   const counterObserver = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting && e.target.dataset.count) {
@@ -1054,7 +1050,14 @@
   }, { threshold: 0.5 });
   document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
 
-  // ── Tab switching ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
   function switchTab(tab) {
     document.getElementById('panelText').classList.toggle('active', tab === 'text');
     document.getElementById('panelUrl').classList.toggle('active', tab === 'url');
@@ -1063,7 +1066,6 @@
     lucide.createIcons();
   }
 
-  // ── Samples ──
   const samples = {
     fake1: "Amazing product!! Best purchase EVER!! Everyone needs this!! So happy with this!! Will buy again!!",
     fake2: "I love this product. It is great and works perfectly. I love it. Great quality. I have one in my bathroom and one in my office.",
@@ -1076,7 +1078,6 @@
     document.getElementById('resultCard').style.display = 'none';
   }
 
-  // ── Analyze single review ──
   async function analyzeReview() {
     const review = document.getElementById('reviewInput').value.trim();
     if (!review) return;
@@ -1090,23 +1091,96 @@
         body: JSON.stringify({ review })
       });
       let data = {};
-      try { data = await res.json(); } catch (_) { data = {}; }
-      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok || data.error) throw new Error(data.error || 'Prediction failed. Please try again.');
       showResult(data);
     } catch (e) {
       alert(e.message || 'Prediction failed. Please try again.');
     }
-}
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="search"></i> Analyze Review';
+    lucide.createIcons();
+  }
 
-  // â”€â”€ Smooth nav scroll â”€â”€
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
-  
+  function showResult(data) {
+    const card = document.getElementById('resultCard');
+    const isFake = String(data.verdict || '').trim().toUpperCase() === 'FAKE';
+    card.classList.remove('fake', 'genuine');
+    card.classList.add('result-card', isFake ? 'fake' : 'genuine');
+    const iconEl = document.getElementById('verdictIcon');
+    iconEl.setAttribute('data-lucide', isFake ? 'alert-triangle' : 'check-circle');
+    lucide.createIcons({ nodes: [iconEl] });
+    document.getElementById('verdictText').textContent = isFake ? 'Fake Review Detected' : 'Genuine Review';
+    document.getElementById('metricFake').textContent      = data.confidence + '%';
+    document.getElementById('metricBert').textContent      = data.bert_score + '%';
+    document.getElementById('metricGnn').textContent       = data.gnn_score  + '%';
+    document.getElementById('metricHeuristic').textContent = data.heuristic_score + '%';
+    document.getElementById('reasonsTitle').textContent = isFake ? 'Detected Signals' : 'Authenticity Signals';
+    const list = document.getElementById('reasonsList');
+    const reasons = Array.isArray(data.reasons) && data.reasons.length ? data.reasons : ['No explanation available.'];
+    list.innerHTML = reasons.map((r, i) =>
+      '<li style="animation-delay:' + (i * 0.08) + 's"><span class="reason-dot"></span>' + r + '</li>'
+    ).join('');
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function scanUrl() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) { alert('Please enter an Amazon or Flipkart product URL.'); return; }
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Scraping and analysing reviews...';
+    document.getElementById('scrapeResult').style.display = 'none';
+    try {
+      const res = await fetch('/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, max_reviews: 8 })
+      });
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok || data.error) throw new Error(data.error || 'Scraping failed. Please try again.');
+      showScrapeResult(data);
+    } catch (e) {
+      alert(e.message || 'Scraping failed. Please try again.');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="scan-search"></i> Scan Product Reviews';
+    lucide.createIcons();
+  }
+
+  function showScrapeResult(data) {
+    const pct = data.fake_percentage || 0;
+    const level = pct >= 50 ? 'high' : (pct >= 25 ? 'mid' : 'low');
+    const icons  = { low: 'shield-check', mid: 'shield-alert', high: 'shield-x' };
+    const labels = { low: 'Low Risk Product', mid: 'Moderate Risk', high: 'High Risk — Likely Fake Reviews' };
+    const banner = document.getElementById('trustBanner');
+    banner.className = 'trust-banner ' + level;
+    const iconEl = document.getElementById('trustIcon').querySelector('i');
+    iconEl.setAttribute('data-lucide', icons[level]);
+    document.getElementById('trustVerdict').textContent = labels[level];
+    const plat = data.platform.charAt(0).toUpperCase() + data.platform.slice(1);
+    document.getElementById('trustSub').textContent = plat + ' · ' + data.total_reviews_analysed + ' reviews analysed';
+    document.getElementById('statFakePct').textContent = pct + '%';
+    document.getElementById('statTotal').textContent   = data.total_reviews_analysed;
+    document.getElementById('statTrust').textContent   = data.trust_score + '%';
+    const container = document.getElementById('reviewItems');
+    container.innerHTML = (data.reviews || []).map(r => {
+      const f = r.verdict === 'FAKE';
+      return '<div class="review-item ' + (f ? 'fake' : 'genuine') + '">' +
+        '<div class="review-item-head">' +
+          '<span class="review-item-badge"><i data-lucide="' + (f ? 'x' : 'check') + '"></i> ' + r.verdict + '</span>' +
+          '<span class="review-item-conf">' + r.confidence + '% confidence</span>' +
+        '</div>' +
+        '<div class="review-item-text">' + r.text + '</div>' +
+      '</div>';
+    }).join('');
+    const el = document.getElementById('scrapeResult');
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    lucide.createIcons();
+  }
 </script>
 </body>
 </html>
