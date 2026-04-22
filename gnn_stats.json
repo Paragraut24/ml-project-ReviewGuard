@@ -1,0 +1,28 @@
+{
+  "model_version": "GCN_weighted_v2",
+  "dataset": "YelpCHI (Yelp spam filter ground truth)",
+  "nodes": 45954,
+  "edges": 7693958,
+  "features": 32,
+  "spam_count": 6677,
+  "total_reviews": 45954,
+  "spam_pct": 14.5,
+  "edge_types": [
+    "R-U-R (same user)",
+    "R-T-R (same time/product)",
+    "R-S-R (same rating/product)"
+  ],
+  "epochs": 150,
+  "val_accuracy": 87.4,
+  "macro_f1": 0.761,
+  "genuine_precision": 0.9262,
+  "genuine_recall": 0.9248,
+  "genuine_f1": 0.9255,
+  "spam_precision": 0.5947,
+  "spam_recall": 0.5997,
+  "spam_f1": 0.5972,
+  "class_weights": {
+    "genuine": 0.583,
+    "spam": 3.503
+  }
+}

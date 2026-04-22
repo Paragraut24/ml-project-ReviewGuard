@@ -5,11 +5,15 @@ __pycache__/
 
 # Datasets (Do not push heavy data)
 reviews.csv
+reviews_with_features.csv
 
-# Large Model Weights
+# Large Model Weights & Graph Binaries
 bert_model/pytorch_model.bin
 bert_model/model.safetensors
 bert_model/training_args.bin
+graph_data.pt
+gnn_model_weighted.pt
+scaler.pkl
 
 # OS Files
 .DS_Store

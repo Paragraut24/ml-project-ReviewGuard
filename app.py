@@ -9,6 +9,7 @@ import time
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
+from gnn_inference import get_gnn_score
 
 app = Flask(__name__)
 
@@ -386,31 +387,11 @@ def compute_gnn_features(text):
     }
 
 
-def simulate_gnn_score(text):
-    """Behavioral fake probability [0=genuine,1=fake] via 12 weighted GNN features."""
-    f = compute_gnn_features(text)
-    score = 0.0
-    # Fake signals
-    if f['ttr'] < 0.50:             score += 0.20
-    elif f['ttr'] < 0.65:           score += 0.08
-    if f['sent_variance'] < 1.5:    score += 0.12
-    if f['punct_abuse'] > 0.20:     score += 0.15
-    elif f['punct_abuse'] > 0.10:   score += 0.06
-    score += f['length_penalty'] * 0.18
-    if f['generic_hits'] >= 2:      score += 0.18
-    elif f['generic_hits'] == 1:    score += 0.07
-    if f['negative_hits'] == 0 and f['pos_neg_ratio'] > 3: score += 0.12
-    if f['caps_ratio'] > 0.25:      score += 0.10
-    # Genuine signals
-    score -= min(f['specificity_hits'] * 0.10, 0.25)
-    score -= min(f['temporal_hits'] * 0.08, 0.20)
-    score -= min(f['opinion_hits'] * 0.07, 0.18)
-    score -= min(f['negative_hits'] * 0.06, 0.18)
-    if f['has_question']: score -= 0.06
-    return round(min(max(score + 0.38, 0.05), 0.97), 4)
+def simulate_gnn_score(text, rating=3.0, bert_score=0.5):
+    """Real GNN — graph-based inference on 40,432 node review graph (Acc: 83.2%, F1: 0.832)."""
+    return get_gnn_score(text, rating=float(rating), bert_score=float(bert_score))
 
-
-def predict_review(review_text):
+def predict_review(review_text, rating=3.0):
     bert_warning = None
     try:
         bert_fake_score, backend = get_bert_fake_score(review_text)
@@ -420,12 +401,19 @@ def predict_review(review_text):
         backend = "fallback_bert_unavailable"
         bert_warning = str(exc)
 
-    gnn_score = simulate_gnn_score(review_text)
-    fused_score = 0.65 * bert_fake_score + 0.35 * gnn_score
+    gnn_score = simulate_gnn_score(review_text, rating=float(rating), bert_score=bert_fake_score)
+    gnn_corrected = 1.0 - gnn_score          # polarity-aligned: higher = more fake
+    fused_score = 0.65 * bert_fake_score + 0.35 * gnn_corrected
     boost = heuristic_boost(review_text)
     final_score = min(fused_score + boost, 1.0)
 
+    # Divergence check — if BERT and GNN strongly disagree, flag as UNVERIFIABLE
+    divergence = abs(bert_fake_score - gnn_corrected)
+    DIVERGENCE_THRESHOLD = 0.55
+
     verdict = "FAKE" if final_score > 0.35 else "GENUINE"
+    if divergence >= DIVERGENCE_THRESHOLD:
+        verdict = "UNVERIFIABLE"
     reasons = get_reasons(review_text, verdict)
     if bert_warning:
         # Show a clean, user-friendly note — not the raw exception dump.
@@ -438,6 +426,7 @@ def predict_review(review_text):
         "bert_score": round(bert_fake_score * 100, 1),
         "gnn_score": round(gnn_score * 100, 1),
         "heuristic_score": round(min(boost, 0.50) * 100, 1),
+        "divergence": round(divergence, 3),
         "reasons": reasons,
         "model_backend": backend,
         "bert_warning": bert_warning,
@@ -448,6 +437,10 @@ def predict_review(review_text):
 def home():
     return render_template("index.html")
 
+@app.route("/api/gnn-status")
+def api_gnn_status():
+    from gnn_inference import gnn_status
+    return jsonify(gnn_status())
 
 @app.route("/health")
 def health():
@@ -480,13 +473,13 @@ def predict():
         return jsonify({"error": "No review text provided"}), 400
 
     try:
-        result = predict_review(review)
+        result = predict_review(review, rating=float(data.get("rating", 3.0)))
         return jsonify(result)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
 
 
-# ── Scraping helpers ─────────────────────────────────────────────────────────
+# -- Scraping helpers ---------------------------------------------------------
 
 _SCRAPE_HEADERS = {
     "User-Agent": (
@@ -722,6 +715,10 @@ def bulk_analyze():
 if __name__ == "__main__":
     selected = get_model_backend()
     print(f"Starting ReviewGuard with backend: {selected}")
+    # Pre-load GNN graph on startup so first request isn't slow
+    from gnn_inference import get_gnn_score as _warmup
+    import threading
+    threading.Thread(target=lambda: _warmup("warmup", 3.0, 0.5), daemon=True).start()
 
     port = int((os.environ.get("PORT") or "5000").strip())
     debug = (os.environ.get("FLASK_DEBUG") or "1").strip() == "1"

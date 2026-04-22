@@ -472,8 +472,9 @@
       from { opacity:0; transform: translateY(18px); }
       to   { opacity:1; transform: translateY(0); }
     }
-    .result-card.fake    { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.28); }
-    .result-card.genuine { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.28); }
+    .result-card.fake         { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.28); }
+    .result-card.genuine      { background: rgba(34,197,94,0.08);   border: 1px solid rgba(34,197,94,0.28); }
+    .result-card.unverifiable { background: rgba(245,158,11,0.08);  border: 1px solid rgba(245,158,11,0.30); }
 
     .result-verdict {
       display: flex; align-items: center; gap: 12px;
@@ -484,10 +485,12 @@
       display: flex; align-items: center; justify-content: center;
     }
     .verdict-icon-wrap svg { width: 22px; height: 22px; }
-    .result-card.fake    .verdict-icon-wrap { background: rgba(239,68,68,0.2); color: #f87171; }
-    .result-card.genuine .verdict-icon-wrap { background: rgba(34,197,94,0.2);  color: #4ade80; }
-    .result-card.fake    .result-verdict { color: #f87171; }
-    .result-card.genuine .result-verdict { color: #4ade80; }
+    .result-card.fake         .verdict-icon-wrap { background: rgba(239,68,68,0.2);  color: #f87171; }
+    .result-card.genuine      .verdict-icon-wrap { background: rgba(34,197,94,0.2);   color: #4ade80; }
+    .result-card.unverifiable .verdict-icon-wrap { background: rgba(245,158,11,0.2);  color: #fbbf24; }
+    .result-card.fake         .result-verdict { color: #f87171; }
+    .result-card.genuine      .result-verdict { color: #4ade80; }
+    .result-card.unverifiable .result-verdict { color: #fbbf24; }
 
     .result-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
     .metric {
@@ -500,8 +503,9 @@
     }
     @keyframes countUp { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
     .metric-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    .result-card.fake    .metric-val { color: #f87171; }
-    .result-card.genuine .metric-val { color: #4ade80; }
+    .result-card.fake         .metric-val { color: #f87171; }
+    .result-card.genuine      .metric-val { color: #4ade80; }
+    .result-card.unverifiable .metric-val { color: #fbbf24; }
     .reasons-panel {
   margin-top: 20px;
   padding: 20px;
@@ -526,8 +530,9 @@
   width: 7px; height: 7px; border-radius: 50%;
   margin-top: 7px; flex-shrink: 0;
 }
-.result-card.fake    .reason-dot { background: #f87171; }
-.result-card.genuine .reason-dot { background: #4ade80; }
+    .result-card.fake         .reason-dot { background: #f87171; }
+    .result-card.genuine      .reason-dot { background: #4ade80; }
+    .result-card.unverifiable .reason-dot { background: #fbbf24; }
 
     /* â”€â”€ Spinner â”€â”€ */
     .spinner {
@@ -1158,24 +1163,47 @@
   }
 
   function showResult(data) {
-    const card = document.getElementById('resultCard');
-    const isFake = String(data.verdict || '').trim().toUpperCase() === 'FAKE';
-    card.classList.remove('fake', 'genuine');
-    card.classList.add('result-card', isFake ? 'fake' : 'genuine');
+    const card    = document.getElementById('resultCard');
+    const verdict = String(data.verdict || '').trim().toUpperCase();
+    const isFake  = verdict === 'FAKE';
+    const isUnv   = verdict === 'UNVERIFIABLE';
+
+    card.classList.remove('fake', 'genuine', 'unverifiable');
+    if (isFake)    card.classList.add('fake');
+    else if (isUnv) card.classList.add('unverifiable');
+    else            card.classList.add('genuine');
+
     const iconEl = document.getElementById('verdictIcon');
-    iconEl.setAttribute('data-lucide', isFake ? 'alert-triangle' : 'check-circle');
+    iconEl.setAttribute('data-lucide',
+      isFake ? 'alert-triangle' : isUnv ? 'help-circle' : 'check-circle'
+    );
     lucide.createIcons({ nodes: [iconEl] });
-    document.getElementById('verdictText').textContent = isFake ? 'Fake Review Detected' : 'Genuine Review';
+
+    const verdictText = document.getElementById('verdictText');
+    if (isUnv) {
+      verdictText.innerHTML = 'Cannot Determine' +
+        '<span style="display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-top:4px;">' +
+        'Models strongly disagree — human review recommended</span>';
+    } else {
+      verdictText.textContent = isFake ? 'Fake Review Detected' : 'Genuine Review';
+    }
+
     document.getElementById('metricFake').textContent      = data.confidence + '%';
     document.getElementById('metricBert').textContent      = data.bert_score + '%';
     document.getElementById('metricGnn').textContent       = data.gnn_score  + '%';
     document.getElementById('metricHeuristic').textContent = data.heuristic_score + '%';
-    document.getElementById('reasonsTitle').textContent = isFake ? 'Detected Signals' : 'Authenticity Signals';
-    const list = document.getElementById('reasonsList');
+
+    document.getElementById('reasonsTitle').textContent =
+      isFake ? 'Detected Signals' : isUnv ? 'Conflict Summary' : 'Authenticity Signals';
+    const list    = document.getElementById('reasonsList');
     const reasons = Array.isArray(data.reasons) && data.reasons.length ? data.reasons : ['No explanation available.'];
-    list.innerHTML = reasons.map((r, i) =>
+    const extra   = isUnv && data.divergence !== undefined
+      ? ['Model divergence score: ' + data.divergence + ' (threshold: 0.55)']
+      : [];
+    list.innerHTML = [...reasons, ...extra].map((r, i) =>
       '<li style="animation-delay:' + (i * 0.08) + 's"><span class="reason-dot"></span>' + r + '</li>'
     ).join('');
+
     card.style.display = 'block';
     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
