@@ -156,14 +156,14 @@ site/
 # Project-specific exclusions
 # ============================================
 
-# Training scripts (keep only inference)
+# Training scripts (keep locally, exclude from GitHub)
 train_*.py
-evaluate_*.py
-generate_*.py
-upload_*.py
-regenerate_*.py
+evaluate_model.py
+generate_charts.py
+upload_config_to_hf.py
+regenerate_scaler.py
 
-# Development files
+# Development files (keep locally, exclude from GitHub)
 test_*.py
 *_test.py
 *_backup.*
