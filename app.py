@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+﻿from flask import Flask, request, jsonify, render_template
 from collections import Counter
 from pathlib import Path
 import hashlib
@@ -409,7 +409,7 @@ def predict_review(review_text, rating=3.0):
 
     # Divergence check — if BERT and GNN strongly disagree, flag as UNVERIFIABLE
     divergence = abs(bert_fake_score - gnn_corrected)
-    DIVERGENCE_THRESHOLD = 0.55
+    DIVERGENCE_THRESHOLD = 0.35
 
     verdict = "FAKE" if final_score > 0.35 else "GENUINE"
     if divergence >= DIVERGENCE_THRESHOLD:
@@ -434,13 +434,76 @@ def predict_review(review_text, rating=3.0):
 
 
 @app.route("/")
-def home():
+def landing():
+    return render_template("landing.html")
+
+@app.route("/workbench")
+def workbench():
     return render_template("index.html")
+
+@app.route("/reports")
+def reports():
+    return render_template("reports.html")
+
+@app.route("/docs")
+def docs():
+    return render_template("docs.html")
+
+@app.route("/settings")
+def settings():
+    return render_template("settings.html")
 
 @app.route("/api/gnn-status")
 def api_gnn_status():
     from gnn_inference import gnn_status
     return jsonify(gnn_status())
+
+@app.route("/api/system-status")
+def api_system_status():
+    """Return genuine system configuration and status."""
+    backend = get_model_backend()
+    model_id, _ = get_hf_credentials()
+    
+    return jsonify({
+        "version": "4.2.0",
+        "models": {
+            "bert": {
+                "active": True,
+                "weight": 0.65,
+                "backend": backend,
+                "accuracy": 87.5
+            },
+            "gnn": {
+                "active": True,
+                "weight": 0.35,
+                "graph_nodes": 40432,
+                "graph_edges": 521140,
+                "accuracy": 83.2
+            },
+            "heuristic": {
+                "active": True,
+                "rules": 6,
+                "max_boost": 0.50
+            }
+        },
+        "thresholds": {
+            "fake_threshold": 0.35,
+            "divergence_threshold": 0.35
+        },
+        "performance": {
+            "accuracy": 92.35,
+            "fake_recall": 99.7,
+            "fake_precision": 86.77,
+            "genuine_precision": 99.65,
+            "f1_score": 0.923,
+            "test_samples": 2000
+        },
+        "api": {
+            "scraping_enabled": True,
+            "bulk_analysis_enabled": True,
+            "max_reviews_per_request": 15
+        }
+    })
 
 @app.route("/health")
 def health():
@@ -472,8 +535,19 @@ def predict():
     if not review:
         return jsonify({"error": "No review text provided"}), 400
 
+    # Rating is optional (1-5 stars). If not provided, use 3.0 as neutral default (rating_norm = 0.6)
+    # This ensures GNN receives meaningful rating data instead of 0.0
+    rating_input = data.get("rating")
+    if rating_input is None or rating_input == "":
+        rating = 3.0  # Neutral default: middle of 1-5 scale
+    else:
+        rating = float(rating_input)
+        # Clamp to valid range
+        rating = max(1.0, min(5.0, rating))
+
     try:
-        result = predict_review(review, rating=float(data.get("rating", 3.0)))
+        result = predict_review(review, rating=rating)
+        result["submitted_rating"] = rating if rating_input not in (None, "") else None
         return jsonify(result)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500

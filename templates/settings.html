@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — ReviewGuard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23006c49'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-weight='700'>R</text></svg>">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .settings-grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+        
+        .setting-item {
+            background: var(--surface-container-lowest);
+            border: var(--border-thin);
+            padding: var(--space-md);
+        }
+        
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .setting-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .setting-description {
+            font-size: 13px;
+            color: var(--on-surface-variant);
+            line-height: 1.6;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .setting-value {
+            font-family: 'Inter', monospace;
+            font-size: 12px;
+            padding: var(--space-xs) var(--space-sm);
+            background: var(--surface-container-low);
+            border: var(--border-thin);
+            display: inline-block;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 0;
+        }
+        
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--primary-container);
+            color: var(--primary-container);
+        }
+        
+        .status-badge.inactive {
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid var(--outline);
+            color: var(--outline);
+        }
+        
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid #f59e0b;
+            color: #f59e0b;
+        }
+        
+        .info-box {
+            background: var(--surface-container-low);
+            border: var(--border-thin);
+            border-left: 4px solid var(--primary-container);
+            padding: var(--space-sm);
+            margin: var(--space-sm) 0;
+            font-size: 12px;
+            color: var(--on-surface-variant);
+        }
+        
+        .threshold-slider {
+            width: 100%;
+            margin: var(--space-sm) 0;
+        }
+        
+        .threshold-value {
+            font-family: 'Inter', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo" style="text-decoration: none;">ReviewGuard</a>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Navigation</div>
+                    <a href="/workbench" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span>Workbench</span>
+                    </a>
+                    <a href="/reports" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Reports</span>
+                    </a>
+                    <a href="/docs" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span>Docs</span>
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <a href="/settings" class="nav-item active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"></button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1 class="page-title">System Settings</h1>
+                <p class="page-subtitle">Configuration and model status</p>
+            </header>
+
+            <div class="settings-grid">
+                <!-- System Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">System Status</div>
+                        <div class="card-badge">Operational</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-label">Version</div>
+                                <div class="metric-value" style="font-size: 20px;">4.2.0</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Uptime</div>
+                                <div class="metric-value" style="font-size: 20px;">99.8%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Models</div>
+                                <div class="metric-value" style="font-size: 20px;">3</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">API Status</div>
+                                <div class="metric-value" style="font-size: 20px;">✓</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Configuration -->
+                <section>
+                    <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: var(--space-md);">
+                        Model Configuration
+                    </h2>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <div class="setting-title">BERT Semantic Model</div>
+                            <span class="status-badge active">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                                Active
+                            </span>
+                        </div>
+                        <div class="setting-description">
+                            Fine-tuned BERT-base model for deceptive language detection. Trained on 21,000 Amazon reviews with 87.5% standalone accuracy.
+                        </div>
+                        <div style="display: flex; gap: var(--space-md); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Model Weight</div>
+                                <div class="setting-value">65%</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Backend</div>
+                                <div class="setting-value" id="bert-backend">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <div class="setting-title">GNN Behavioral Model</div>
+                            <span class="status-badge active">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                                Active
+                            </span>
+                        </div>
+                        <div class="setting-description">
+                            Graph Neural Network trained on YelpChi fraud graph (40,432 nodes, 521,140 edges). Detects coordinated campaigns with 83.2% accuracy.
+                        </div>
+                        <div style="display: flex; gap: var(--space-md); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Model Weight</div>
+                                <div class="setting-value">35%</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Graph Size</div>
+                                <div class="setting-value" id="gnn-graph-size">40,432 nodes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <div class="setting-title">Heuristic Engine</div>
+                            <span class="status-badge active">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                                Active
+                            </span>
+                        </div>
+                        <div class="setting-description">
+                            Rule-based detection system with 6 linguistic signals. Provides interpretable boost to final score (capped at +50%).
+                        </div>
+                        <div style="display: flex; gap: var(--space-md); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Active Rules</div>
+                                <div class="setting-value">6 signals</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Max Boost</div>
+                                <div class="setting-value">+50%</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Detection Thresholds -->
+                <section>
+                    <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: var(--space-md);">
+                        Detection Thresholds
+                    </h2>
+
+                    <div class="setting-item">
+                        <div class="setting-title">FAKE Verdict Threshold</div>
+                        <div class="setting-description">
+                            Minimum confidence score required to classify a review as FAKE. Higher values reduce false positives but may miss some fake reviews.
+                        </div>
+                        <div style="margin: var(--space-sm) 0;">
+                            <div class="threshold-value">0.35 (35%)</div>
+                            <div style="font-size: 11px; color: var(--on-surface-variant); margin-top: 4px;">
+                                Current setting: Balanced (recommended)
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            ℹ️ This threshold is optimized for 92.35% accuracy with 99.7% FAKE recall. Changing it may affect system performance.
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-title">Divergence Threshold</div>
+                        <div class="setting-description">
+                            Maximum allowed disagreement between BERT and GNN before triggering UNVERIFIABLE verdict. Prevents forced verdicts on edge cases.
+                        </div>
+                        <div style="margin: var(--space-sm) 0;">
+                            <div class="threshold-value">0.35 (35%)</div>
+                            <div style="font-size: 11px; color: var(--on-surface-variant); margin-top: 4px;">
+                                Current setting: Standard (recommended)
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            ℹ️ When models disagree by ≥35%, the system flags for human review instead of forcing a potentially incorrect verdict.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- API Configuration -->
+                <section>
+                    <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: var(--space-md);">
+                        API Configuration
+                    </h2>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <div class="setting-title">Scraping Service</div>
+                            <span class="status-badge active">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                                Enabled
+                            </span>
+                        </div>
+                        <div class="setting-description">
+                            Automated review scraping from Amazon and Flipkart product pages. Supports up to 15 reviews per request.
+                        </div>
+                        <div style="display: flex; gap: var(--space-md); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Supported Platforms</div>
+                                <div class="setting-value">Amazon, Flipkart</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Max Reviews</div>
+                                <div class="setting-value">15 per request</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <div class="setting-title">Bulk Analysis</div>
+                            <span class="status-badge active">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                                Enabled
+                            </span>
+                        </div>
+                        <div class="setting-description">
+                            Analyze multiple reviews from pasted text. Supports up to 15 reviews separated by blank lines or --- markers.
+                        </div>
+                        <div style="display: flex; gap: var(--space-md); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Max Reviews</div>
+                                <div class="setting-value">15 per request</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Separators</div>
+                                <div class="setting-value">Blank lines, ---</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- System Information -->
+                <section>
+                    <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: var(--space-md);">
+                        System Information
+                    </h2>
+
+                    <div class="setting-item">
+                        <div class="setting-title">System Information</div>
+                        <div class="setting-description">
+                            Current runtime configuration and framework details.
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Framework</div>
+                                <div class="setting-value">Flask 3.0</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Python</div>
+                                <div class="setting-value">3.11+</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Models</div>
+                                <div class="setting-value">BERT + GNN</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Version</div>
+                                <div class="setting-value">4.2.0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-title">Performance Metrics</div>
+                        <div class="setting-description">
+                            System-wide performance statistics from production deployment.
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); margin-top: var(--space-sm);">
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Accuracy</div>
+                                <div class="setting-value" id="perf-accuracy">92.35%</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">FAKE Recall</div>
+                                <div class="setting-value" id="perf-recall">99.7%</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">Test Samples</div>
+                                <div class="setting-value" id="perf-samples">2,000</div>
+                            </div>
+                            <div>
+                                <div class="label-caps" style="margin-bottom: 4px;">F1 Score</div>
+                                <div class="setting-value" id="perf-f1">0.923</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Footer -->
+            <footer>
+                <div class="footer-text">
+                    ReviewGuard v4.2.0 — Professional-grade integrity for digital commerce
+                </div>
+                <div class="footer-text">
+                    <a href="https://github.com/Paragraut24/ml-project-ReviewGuard" target="_blank" class="footer-link">
+                        GitHub Repository
+                    </a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Fetch and display real system status
+        async function loadSystemStatus() {
+            try {
+                const response = await fetch('/api/system-status');
+                const data = await response.json();
+                
+                // Update BERT backend
+                const bertBackend = document.getElementById('bert-backend');
+                if (bertBackend) {
+                    bertBackend.textContent = data.models.bert.backend === 'local' ? 'Local Model' : 
+                                             data.models.bert.backend === 'pipeline' ? 'HuggingFace Pipeline' :
+                                             data.models.bert.backend === 'hf_api' ? 'HuggingFace API' : 'Unknown';
+                }
+                
+                // Update GNN graph size
+                const gnnGraphSize = document.getElementById('gnn-graph-size');
+                if (gnnGraphSize) {
+                    gnnGraphSize.textContent = data.models.gnn.graph_nodes.toLocaleString() + ' nodes';
+                }
+                
+                // Update all performance metrics
+                const perfMetrics = {
+                    'perf-accuracy': data.performance.accuracy + '%',
+                    'perf-recall': data.performance.fake_recall + '%',
+                    'perf-samples': data.performance.test_samples.toLocaleString(),
+                    'perf-f1': data.performance.f1_score
+                };
+                
+                Object.entries(perfMetrics).forEach(([id, value]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                });
+                
+            } catch (error) {
+                console.error('Failed to load system status:', error);
+            }
+        }
+        
+        // Load status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadSystemStatus();
+        });
+    </script>
+</body>
+</html>

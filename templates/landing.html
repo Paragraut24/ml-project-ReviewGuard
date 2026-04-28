@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewGuard — Professional Review Integrity Analysis</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23006c49'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-weight='700'>R</text></svg>">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* Landing Page Specific Styles */
+        body {
+            background: #e8f5e9;
+        }
+        
+        /* Navbar */
+        .landing-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .landing-navbar .logo-link {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .landing-navbar .logo-link:hover {
+            color: var(--primary);
+        }
+        
+        .landing-nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .landing-nav-links a {
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .landing-nav-links a:hover {
+            color: #1a1a1a;
+        }
+        
+        .btn-workbench {
+            padding: 10px 24px;
+            background: var(--primary-container);
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-workbench:hover {
+            background: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        /* Hero Section */
+        /* Hero Section */
+        .landing-hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 40px 80px;
+            background: #e8f5e9;
+        }
+        
+        .hero-container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+        
+        .hero-left {
+            animation: fadeInLeft 0.8s ease-out;
+        }
+        
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .hero-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 24px;
+        }
+        
+        .hero-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            color: #1a1a1a;
+        }
+        
+        .hero-subtitle {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .btn-hero-primary {
+            padding: 16px 32px;
+            background: var(--primary-container);
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-hero-primary:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-hero-secondary {
+            padding: 16px 32px;
+            background: white;
+            color: #1a1a1a;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-hero-secondary:hover {
+            border-color: #999;
+            transform: translateY(-2px);
+        }
+        
+        .hero-right {
+            animation: fadeInRight 0.8s ease-out;
+        }
+        
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .verdict-demo {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+        
+        .verdict-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .verdict-title-small {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #666;
+        }
+        
+        .verdict-badge-fake {
+            padding: 4px 12px;
+            background: #ffebee;
+            color: #c62828;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        
+        .review-content {
+            background: #f8f9fa;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+            border-left: 3px solid #c62828;
+        }
+        
+        .verdict-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #999;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-family: 'Inter', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .divergence-info {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            background: #2d3436;
+            padding: 60px 40px;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 60px;
+        }
+        
+        .stat-item {
+            text-align: left;
+        }
+        
+        .stat-value-large {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--primary-container);
+            margin-bottom: 8px;
+        }
+        
+        .stat-label-large {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Three Layers Section */
+        .three-layers {
+            padding: 100px 40px;
+            background: white;
+        }
+        
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #1a1a1a;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .layers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+        
+        .layer-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 32px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .layer-card:nth-child(1) { animation-delay: 0.1s; }
+        .layer-card:nth-child(2) { animation-delay: 0.2s; }
+        .layer-card:nth-child(3) { animation-delay: 0.3s; }
+        
+        .layer-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .layer-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--primary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .layer-icon svg {
+            width: 24px;
+            height: 24px;
+            color: var(--primary-container);
+        }
+        
+        .layer-accuracy {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #999;
+            margin-bottom: 12px;
+        }
+        
+        .layer-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+        
+        .layer-description {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #666;
+        }
+        
+        .fusion-formula {
+            margin-top: 60px;
+            text-align: center;
+            padding: 32px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+        
+        /* Verdict States Section */
+        .verdict-states {
+            padding: 100px 40px;
+            background: #e8f5e9;
+        }
+        
+        .verdict-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+        
+        .verdict-state-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .verdict-state-card:nth-child(1) { animation-delay: 0.1s; border-left: 4px solid #c62828; }
+        .verdict-state-card:nth-child(2) { animation-delay: 0.2s; border-left: 4px solid var(--primary-container); }
+        .verdict-state-card:nth-child(3) { animation-delay: 0.3s; border-left: 4px solid #f59e0b; }
+        
+        .verdict-state-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .verdict-label-fake {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #c62828;
+            margin-bottom: 16px;
+        }
+        
+        .verdict-label-genuine {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--primary-container);
+            margin-bottom: 16px;
+        }
+        
+        .verdict-label-unverifiable {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #f59e0b;
+            margin-bottom: 16px;
+        }
+        
+        .verdict-state-description {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        
+        .verdict-example-text {
+            background: #f8f9fa;
+            padding: 12px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            border-left: 3px solid #e0e0e0;
+        }
+        
+        /* Model Comparison Section */
+        .model-comparison {
+            padding: 100px 40px;
+            background: white;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+        
+        .comparison-table {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .comparison-table:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .table-header {
+            padding: 20px 24px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .table-content {
+            padding: 24px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #999;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th:not(:first-child) {
+            text-align: right;
+        }
+        
+        td {
+            padding: 16px 0;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        td:not(:first-child) {
+            text-align: right;
+            font-family: 'Inter', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .highlight-row {
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .highlight-value {
+            color: var(--primary-container);
+            font-weight: 700;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 40px;
+            background: #2d3436;
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .cta-button-container {
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+        
+        /* Footer */
+        .landing-footer {
+            padding: 40px;
+            background: #1a1a1a;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 2;
+        }
+        
+        .footer-content a {
+            color: var(--primary-container);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .footer-content a:hover {
+            color: white;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+            
+            .layers-grid,
+            .verdict-grid,
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .landing-navbar {
+                padding: 16px 20px;
+            }
+            
+            .landing-nav-links {
+                display: none;
+            }
+            
+            .hero-title {
+                font-size: 40px;
+            }
+            
+            .section-title,
+            .cta-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+<body>
+    <!-- Navbar -->
+    <nav class="landing-navbar">
+        <a href="/" class="logo-link">ReviewGuard</a>
+        <div class="landing-nav-links">
+            <a href="/reports">Performance</a>
+            <a href="/docs">Docs</a>
+            <a href="https://github.com/Paragraut24/ml-project-ReviewGuard" target="_blank">GitHub</a>
+            <a href="/workbench" class="btn-workbench">
+                Open Workbench
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="landing-hero">
+        <div class="hero-container">
+            <div class="hero-left">
+                <div class="hero-label">100% HYBRID DETECTOR SYSTEM</div>
+                <h1 class="hero-title">Don't Trust the Rating.<br>Trust the Analysis.</h1>
+                <p class="hero-subtitle">
+                    Our hybrid AI system fuses BERT semantic analysis with Graph Neural Networks to detect coordinated fraud campaigns. Built for e-commerce platforms that demand absolute integrity.
+                </p>
+                <div class="hero-buttons">
+                    <a href="/workbench" class="btn-hero-primary">
+                        Open Workbench
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </a>
+                    <a href="/docs" class="btn-hero-secondary">
+                        View on GitHub
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="hero-right">
+                <div class="verdict-demo">
+                    <div class="verdict-header">
+                        <div class="verdict-title-small">Analysis Report / ID: RG-8743</div>
+                        <div class="verdict-badge-fake">FAKE</div>
+                    </div>
+                    
+                    <div class="review-content">
+                        "AMAZING!!! Best product EVER!!! Love love love!!! Buy NOW!!!"
+                    </div>
+                    
+                    <div class="verdict-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">BERT Score</div>
+                            <div class="stat-value">94.2%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">GNN Score</div>
+                            <div class="stat-value">87.1%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Heuristic</div>
+                            <div class="stat-value">+45%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Divergence</div>
+                            <div class="stat-value">0.071</div>
+                        </div>
+                    </div>
+                    
+                    <div class="divergence-info">
+                        ✓ Models agree (divergence &lt; 0.35)<br>
+                        ✓ 6 out of 6 fake signals detected
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value-large">92.35%</div>
+                <div class="stat-label-large">System Accuracy</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value-large">99.7%</div>
+                <div class="stat-label-large">FAKE Recall</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value-large">3</div>
+                <div class="stat-label-large">AI Layers Combined</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Three Layers Section -->
+    <section class="three-layers">
+        <div class="section-container">
+            <h2 class="section-title">Three layers. One verdict.</h2>
+            
+            <div class="layers-grid">
+                <div class="layer-card">
+                    <div class="layer-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                    </div>
+                    <div class="layer-accuracy">Acc: 87.5%</div>
+                    <h3 class="layer-title">BERT (Semantic)</h3>
+                    <p class="layer-description">
+                        Fine-tuned on 21,000 Amazon reviews. Analyzes linguistic patterns, sentiment velocity, and deceptive language markers.
+                    </p>
+                </div>
+
+                <div class="layer-card">
+                    <div class="layer-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="19" cy="5" r="2"/>
+                            <circle cx="5" cy="19" r="2"/>
+                            <circle cx="19" cy="19" r="2"/>
+                            <path d="M13.73 10.27L17.27 6.73M10.27 13.73L6.73 17.27M13.73 13.73L17.27 17.27"/>
+                        </svg>
+                    </div>
+                    <div class="layer-accuracy">Acc: 83.2%</div>
+                    <h3 class="layer-title">GNN (Behavioral)</h3>
+                    <p class="layer-description">
+                        Trained on YelpChi fraud graph (40,432 nodes, 521,140 edges). Maps reviewer behavior patterns and coordinated campaigns.
+                    </p>
+                </div>
+
+                <div class="layer-card">
+                    <div class="layer-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <div class="layer-accuracy">Acc: +5% Boost</div>
+                    <h3 class="layer-title">Heuristic Engine</h3>
+                    <p class="layer-description">
+                        6 linguistic rules: exclamation abuse, vague superlatives, word repetition, duplicate sentences, ALL CAPS, missing negatives.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="fusion-formula">
+                final_score = 0.65 × BERT + 0.35 × GNN + heuristic_boost
+            </div>
+        </div>
+    </section>
+
+    <!-- Verdict States Section -->
+    <section class="verdict-states">
+        <div class="section-container">
+            <h2 class="section-title">Not just FAKE or GENUINE.</h2>
+            
+            <div class="verdict-grid">
+                <div class="verdict-state-card">
+                    <div class="verdict-label-fake">VERDICT: FAKE</div>
+                    <p class="verdict-state-description">
+                        High confidence detection of synthetic content. BERT detected deceptive patterns, heuristic signals fired, and models agree.
+                    </p>
+                    <div class="verdict-example-text">
+                        Divergence &lt; 0.35 · final_score &gt; 0.35
+                    </div>
+                </div>
+
+                <div class="verdict-state-card">
+                    <div class="verdict-label-genuine">VERDICT: GENUINE</div>
+                    <p class="verdict-state-description">
+                        Authentic content verified. Low fake probability, no deception signals, balanced sentiment, and model consensus.
+                    </p>
+                    <div class="verdict-example-text">
+                        Divergence &lt; 0.35 · final_score ≤ 0.35
+                    </div>
+                </div>
+
+                <div class="verdict-state-card">
+                    <div class="verdict-label-unverifiable">VERDICT: UNVERIFIABLE</div>
+                    <p class="verdict-state-description">
+                        Models strongly disagree (divergence ≥ 0.35). Rather than force a wrong verdict, the system flags for human review.
+                    </p>
+                    <div class="verdict-example-text">
+                        "This is a great tool to determine if the problem is a bad charger, or a bad battery"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Model Comparison Section -->
+    <section class="model-comparison">
+        <div class="section-container">
+            <h2 class="section-title">Model Comparison</h2>
+            
+            <div class="comparison-grid">
+                <div class="comparison-table">
+                    <div class="table-header">Model Comparison</div>
+                    <div class="table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Accuracy</th>
+                                    <th>F1 Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>BERT Only</td>
+                                    <td>87.5%</td>
+                                    <td>0.87</td>
+                                </tr>
+                                <tr>
+                                    <td>GNN Only</td>
+                                    <td>83.2%</td>
+                                    <td>0.83</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td><strong>Fused Pipeline</strong></td>
+                                    <td class="highlight-value">92.35%</td>
+                                    <td class="highlight-value">0.923</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="comparison-table">
+                    <div class="table-header">Per-Class Results</div>
+                    <div class="table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>FAKE</strong></td>
+                                    <td>86.77%</td>
+                                    <td class="highlight-value">99.7%</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>GENUINE</strong></td>
+                                    <td>99.65%</td>
+                                    <td>85.19%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2 class="cta-title">See it analyze a review live.</h2>
+        <div class="cta-button-container">
+            <a href="/workbench" class="btn-hero-primary">
+                Open Workbench
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-content">
+            REVIEWGUARD © 2026 | HYBRID AI FRAUD DETECTION SYSTEM<br>
+            <a href="https://github.com/Paragraut24/ml-project-ReviewGuard" target="_blank">GITHUB</a>
+        </div>
+    </footer>
+</body>
+</html>

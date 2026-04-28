@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports — ReviewGuard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23006c49'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-weight='700'>R</text></svg>">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo" style="text-decoration: none;">ReviewGuard</a>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Navigation</div>
+                    <a href="/workbench" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span>Workbench</span>
+                    </a>
+                    <a href="/reports" class="nav-item active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Reports</span>
+                    </a>
+                    <a href="/docs" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span>Docs</span>
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <a href="/settings" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"></button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1 class="page-title">Performance Reports</h1>
+                <p class="page-subtitle">Model evaluation metrics and classification results</p>
+            </header>
+
+            <!-- Model Comparison -->
+            <section>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Model Comparison</div>
+                    </div>
+                    <div class="card-body">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: var(--border-thin);">
+                                    <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Model</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Accuracy</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">F1 Score</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Samples</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: var(--border-thin);">
+                                    <td style="padding: 12px; font-size: 13px;">BERT Only</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">87.5%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">0.87</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">2,000</td>
+                                </tr>
+                                <tr style="border-bottom: var(--border-thin);">
+                                    <td style="padding: 12px; font-size: 13px;">GNN Only</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">83.2%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">0.83</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">2,000</td>
+                                </tr>
+                                <tr style="background: rgba(16, 185, 129, 0.05);">
+                                    <td style="padding: 12px; font-size: 13px; font-weight: 700;">Fused System</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--primary-container);">92.35%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--primary-container);">0.923</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums; font-weight: 700;">2,000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Per-Class Results -->
+            <section style="margin-top: var(--space-md);">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Per-Class Results</div>
+                    </div>
+                    <div class="card-body">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: var(--border-thin);">
+                                    <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Class</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Precision</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Recall</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">F1 Score</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);">Support</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: var(--border-thin);">
+                                    <td style="padding: 12px; font-size: 13px; font-weight: 600;">FAKE</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">86.77%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--primary-container);">99.7%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">92.79%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">1,000</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; font-size: 13px; font-weight: 600;">GENUINE</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">99.65%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">85.19%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">91.86%</td>
+                                    <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-variant-numeric: tabular-nums;">1,000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top: var(--space-sm); padding: var(--space-sm); background: var(--surface-container-low); border: var(--border-thin); font-size: 12px; color: var(--on-surface-variant);">
+                            ✓ System catches 997 of 1000 fake reviews (99.7% recall)
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts -->
+            <section style="margin-top: var(--space-md);">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md);">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Confusion Matrix</div>
+                        </div>
+                        <div class="card-body">
+                            <img src="/static/confusion_matrix.png" alt="Confusion Matrix" style="width: 100%; height: auto; border: var(--border-thin);">
+                            <div style="margin-top: var(--space-sm); font-size: 11px; color: var(--on-surface-variant); text-align: center;">
+                                Evaluated on 2,000 stratified samples (1,000 FAKE + 1,000 GENUINE)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Model Accuracy Comparison</div>
+                        </div>
+                        <div class="card-body">
+                            <img src="/static/accuracy_chart.png" alt="Accuracy Chart" style="width: 100%; height: auto; border: var(--border-thin);">
+                            <div style="margin-top: var(--space-sm); font-size: 11px; color: var(--on-surface-variant); text-align: center;">
+                                BERT vs GNN vs Fused system accuracy
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer>
+                <div class="footer-text">
+                    ReviewGuard v4.2.0 — Professional-grade integrity for digital commerce
+                </div>
+                <div class="footer-text">
+                    <a href="https://github.com/Paragraut24/ml-project-ReviewGuard" target="_blank" class="footer-link">
+                        GitHub Repository
+                    </a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
+
+Copyright © 2026 ReviewGuard. All Rights Reserved.
+
+================================================================================
+
+IMPORTANT - READ CAREFULLY:
+
+This License Agreement ("Agreement") is a legal agreement between you (either an
+individual or a single entity) and ReviewGuard ("Licensor") for the ReviewGuard
+software product, which includes computer software and may include associated
+media, printed materials, and online or electronic documentation ("Software").
+
+BY ACCESSING, DOWNLOADING, INSTALLING, COPYING, OR USING THE SOFTWARE, YOU AGREE
+TO BE BOUND BY THE TERMS OF THIS AGREEMENT. IF YOU DO NOT AGREE TO THE TERMS OF
+THIS AGREEMENT, DO NOT ACCESS, DOWNLOAD, INSTALL, COPY, OR USE THE SOFTWARE.
+
+================================================================================
+
+1. GRANT OF LICENSE
+
+Subject to the terms and conditions of this Agreement, Licensor grants you a
+limited, non-exclusive, non-transferable, revocable license to:
+
+   a) Access and use the deployed web application at the official URL
+   b) View the source code for personal reference only
+   c) Submit bug reports and feature requests
+
+2. RESTRICTIONS
+
+You may NOT:
+
+   a) Copy, modify, adapt, translate, or create derivative works of the Software
+   b) Reverse engineer, decompile, disassemble, or attempt to derive the source
+      code of any compiled components
+   c) Rent, lease, loan, sell, sublicense, or distribute the Software
+   d) Remove, alter, or obscure any proprietary notices on the Software
+   e) Use the Software for any commercial purpose without explicit written
+      permission from Licensor
+   f) Extract, copy, or replicate any machine learning models, algorithms, or
+      training methodologies
+   g) Deploy your own instance of the Software without explicit written
+      permission from Licensor
+   h) Use the Software to create competing products or services
+   i) Scrape, harvest, or collect data from the Software using automated means
+   j) Redistribute the Software in any form, including as part of another
+      software package
+
+3. INTELLECTUAL PROPERTY RIGHTS
+
+The Software is licensed, not sold. Licensor retains all right, title, and
+interest in and to the Software, including all intellectual property rights
+therein. This includes, but is not limited to:
+
+   a) All source code, object code, and compiled binaries
+   b) All machine learning models, neural networks, and trained weights
+   c) All algorithms, methodologies, and techniques
+   d) All documentation, designs, and specifications
+   e) All trademarks, service marks, and trade names
+
+4. CONFIDENTIALITY
+
+The Software contains proprietary and confidential information of Licensor. You
+agree to:
+
+   a) Maintain the confidentiality of the Software
+   b) Not disclose any part of the Software to third parties
+   c) Not use the Software for any purpose other than as expressly permitted
+      under this Agreement
+
+5. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR
+IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. LICENSOR DOES NOT WARRANT
+THAT THE SOFTWARE WILL MEET YOUR REQUIREMENTS OR THAT THE OPERATION OF THE
+SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+6. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR
+CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS
+OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR ANY
+OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE,
+EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+7. TERMINATION
+
+This Agreement is effective until terminated. Your rights under this Agreement
+will terminate automatically without notice from Licensor if you fail to comply
+with any term(s) of this Agreement. Upon termination, you must:
+
+   a) Cease all use of the Software
+   b) Destroy all copies of the Software in your possession
+   c) Certify in writing to Licensor that you have complied with these
+      requirements
+
+8. ENFORCEMENT
+
+Licensor reserves the right to:
+
+   a) Monitor usage of the Software
+   b) Investigate suspected violations of this Agreement
+   c) Take legal action against violators, including seeking injunctive relief
+      and monetary damages
+   d) Report violations to appropriate law enforcement authorities
+
+9. GOVERNING LAW
+
+This Agreement shall be governed by and construed in accordance with the laws of
+the jurisdiction in which Licensor is located, without regard to its conflict of
+law provisions.
+
+10. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between you and Licensor
+concerning the Software and supersedes all prior or contemporaneous oral or
+written communications, proposals, and representations with respect to the
+Software or any other subject matter covered by this Agreement.
+
+11. SEVERABILITY
+
+If any provision of this Agreement is held to be unenforceable, such provision
+shall be reformed only to the extent necessary to make it enforceable, and the
+remaining provisions of this Agreement shall remain in full force and effect.
+
+12. CONTACT INFORMATION
+
+For questions about this Agreement or to request permissions beyond the scope of
+this license, please contact:
+
+   GitHub: https://github.com/Paragraut24/ml-project-ReviewGuard
+   Repository: ml-project-ReviewGuard
+
+================================================================================
+
+BY USING THE SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS AGREEMENT,
+UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS AND CONDITIONS.
+
+© 2026 ReviewGuard. All Rights Reserved.
+

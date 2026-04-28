@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation — ReviewGuard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23006c49'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-weight='700'>R</text></svg>">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .docs-content {
+            max-width: 900px;
+        }
+        
+        .docs-section {
+            margin-bottom: var(--space-xl);
+        }
+        
+        .docs-section h2 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: var(--space-md);
+            padding-bottom: var(--space-sm);
+            border-bottom: var(--border-thin);
+        }
+        
+        .docs-section h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin: var(--space-md) 0 var(--space-sm);
+            color: var(--primary);
+        }
+        
+        .docs-section p {
+            margin-bottom: var(--space-sm);
+            line-height: 1.7;
+            color: var(--on-surface-variant);
+        }
+        
+        .docs-section ul, .docs-section ol {
+            margin: var(--space-sm) 0 var(--space-md) var(--space-md);
+            line-height: 1.8;
+            color: var(--on-surface-variant);
+        }
+        
+        .docs-section li {
+            margin-bottom: var(--space-xs);
+        }
+        
+        .code-block {
+            background: var(--surface-container-low);
+            border: var(--border-thin);
+            padding: var(--space-sm);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: var(--space-sm) 0;
+        }
+        
+        .api-endpoint {
+            background: var(--surface-container-lowest);
+            border: var(--border-thin);
+            border-left: 4px solid var(--primary-container);
+            padding: var(--space-md);
+            margin: var(--space-sm) 0;
+        }
+        
+        .api-method {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--primary-container);
+            color: var(--on-primary);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-right: var(--space-xs);
+        }
+        
+        .api-path {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .verdict-example {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-sm);
+            margin: var(--space-md) 0;
+        }
+        
+        .verdict-card {
+            background: var(--surface-container-lowest);
+            border: var(--border-thin);
+            padding: var(--space-sm);
+        }
+        
+        .verdict-card.fake {
+            border-left: 4px solid var(--error);
+        }
+        
+        .verdict-card.genuine {
+            border-left: 4px solid var(--primary-container);
+        }
+        
+        .verdict-card.unverifiable {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        @media (max-width: 768px) {
+            .verdict-example {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo" style="text-decoration: none;">ReviewGuard</a>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Navigation</div>
+                    <a href="/workbench" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span>Workbench</span>
+                    </a>
+                    <a href="/reports" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Reports</span>
+                    </a>
+                    <a href="/docs" class="nav-item active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span>Docs</span>
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <a href="/settings" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"></button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1 class="page-title">Documentation</h1>
+                <p class="page-subtitle">Technical methodology and API reference</p>
+            </header>
+
+            <div class="docs-content">
+                <!-- Overview -->
+                <section class="docs-section">
+                    <h2>System Overview</h2>
+                    <p>
+                        ReviewGuard is a hybrid AI system that combines three independent detection layers to identify synthetic and fraudulent product reviews with 92.35% accuracy. The system is designed for e-commerce platforms that require high-confidence fraud detection with minimal false positives.
+                    </p>
+                    <p>
+                        Unlike single-model approaches, ReviewGuard uses ensemble fusion to combine semantic analysis (BERT), behavioral graph analysis (GNN), and rule-based heuristics into a unified verdict system.
+                    </p>
+                </section>
+
+                <!-- Three Layer Architecture -->
+                <section class="docs-section">
+                    <h2>Three-Layer Architecture</h2>
+                    
+                    <h3>Layer 1: BERT (Semantic Analysis)</h3>
+                    <p>
+                        Fine-tuned BERT-base model trained on 21,000 Amazon reviews. Analyzes linguistic patterns, sentiment velocity, and deceptive language markers. Standalone accuracy: 87.5%.
+                    </p>
+                    <ul>
+                        <li>Detects unnatural sentiment patterns and emotional manipulation</li>
+                        <li>Identifies generic praise vs. specific product feedback</li>
+                        <li>Analyzes sentence structure and vocabulary diversity</li>
+                    </ul>
+
+                    <h3>Layer 2: GNN (Behavioral Graph Analysis)</h3>
+                    <p>
+                        Graph Neural Network trained on YelpChi fraud graph (40,432 nodes, 521,140 edges). Maps reviewer behavior patterns and coordinated campaigns. Standalone accuracy: 83.2%.
+                    </p>
+                    <ul>
+                        <li>Detects coordinated review campaigns and bot networks</li>
+                        <li>Analyzes temporal patterns and review velocity</li>
+                        <li>Identifies suspicious reviewer behavior clusters</li>
+                    </ul>
+
+                    <h3>Layer 3: Heuristic Engine</h3>
+                    <p>
+                        Rule-based detection system with 6 linguistic signals. Provides interpretable boost to final score (capped at +50%).
+                    </p>
+                    <ul>
+                        <li>Exclamation mark abuse (≥3 occurrences)</li>
+                        <li>Vague superlatives (amazing, best, perfect, etc.)</li>
+                        <li>Word repetition patterns</li>
+                        <li>Duplicate sentences (copy-paste detection)</li>
+                        <li>ALL CAPS overuse</li>
+                        <li>Missing negative sentiment (no criticism)</li>
+                    </ul>
+                </section>
+
+                <!-- Fusion Formula -->
+                <section class="docs-section">
+                    <h2>Fusion Formula</h2>
+                    <div class="code-block">
+final_score = (0.65 × BERT) + (0.35 × GNN) + heuristic_boost
+
+where:
+  BERT ∈ [0, 1]           (higher = more fake)
+  GNN ∈ [0, 1]            (higher = more fake)
+  heuristic_boost ∈ [0, 0.5]  (capped at +50%)
+  final_score ∈ [0, 1]    (threshold: 0.35)
+                    </div>
+                    <p>
+                        The 65/35 weight distribution reflects BERT's higher standalone accuracy. Heuristic boost is additive and capped to prevent false positives.
+                    </p>
+                </section>
+
+                <!-- Verdict States -->
+                <section class="docs-section">
+                    <h2>Verdict States</h2>
+                    <div class="verdict-example">
+                        <div class="verdict-card fake">
+                            <div class="label-caps" style="color: var(--error); margin-bottom: 8px;">FAKE</div>
+                            <p style="font-size: 12px; color: var(--on-surface-variant);">
+                                final_score > 0.35 and divergence < 0.35
+                            </p>
+                        </div>
+                        <div class="verdict-card genuine">
+                            <div class="label-caps" style="color: var(--primary-container); margin-bottom: 8px;">GENUINE</div>
+                            <p style="font-size: 12px; color: var(--on-surface-variant);">
+                                final_score ≤ 0.35 and divergence < 0.35
+                            </p>
+                        </div>
+                        <div class="verdict-card unverifiable">
+                            <div class="label-caps" style="color: #f59e0b; margin-bottom: 8px;">UNVERIFIABLE</div>
+                            <p style="font-size: 12px; color: var(--on-surface-variant);">
+                                divergence ≥ 0.35 (models disagree)
+                            </p>
+                        </div>
+                    </div>
+                    <p>
+                        <strong>UNVERIFIABLE</strong> is triggered when BERT and GNN strongly disagree (divergence ≥ 0.35). Rather than force a wrong verdict, the system flags for human review. This prevents false positives on edge cases.
+                    </p>
+                </section>
+
+                <!-- API Reference -->
+                <section class="docs-section">
+                    <h2>API Reference</h2>
+                    
+                    <div class="api-endpoint">
+                        <div style="margin-bottom: var(--space-sm);">
+                            <span class="api-method">POST</span>
+                            <span class="api-path">/predict</span>
+                        </div>
+                        <p style="font-size: 12px; color: var(--on-surface-variant); margin-bottom: var(--space-sm);">
+                            Analyze a single review and return verdict with confidence scores.
+                        </p>
+                        <div class="code-block">
+// Request
+{
+  "review": "string (required)",
+  "rating": number (optional, 1-5)
+}
+
+// Response
+{
+  "verdict": "FAKE" | "GENUINE" | "UNVERIFIABLE",
+  "confidence": number,
+  "bert_score": number,
+  "gnn_score": number,
+  "heuristic_score": number,
+  "divergence": number,
+  "reasons": string[],
+  "submitted_rating": number | null
+}
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <div style="margin-bottom: var(--space-sm);">
+                            <span class="api-method">POST</span>
+                            <span class="api-path">/scrape</span>
+                        </div>
+                        <p style="font-size: 12px; color: var(--on-surface-variant); margin-bottom: var(--space-sm);">
+                            Scrape and analyze reviews from Amazon or Flipkart product pages.
+                        </p>
+                        <div class="code-block">
+// Request
+{
+  "url": "string (required)",
+  "max_reviews": number (optional, default: 8, max: 15)
+}
+
+// Response
+{
+  "platform": "amazon" | "flipkart",
+  "total_reviews_analysed": number,
+  "fake_count": number,
+  "genuine_count": number,
+  "fake_percentage": number,
+  "trust_score": number,
+  "verdict": "HIGH RISK" | "MODERATE RISK" | "LOW RISK",
+  "reviews": array
+}
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <div style="margin-bottom: var(--space-sm);">
+                            <span class="api-method">POST</span>
+                            <span class="api-path">/bulk-analyze</span>
+                        </div>
+                        <p style="font-size: 12px; color: var(--on-surface-variant); margin-bottom: var(--space-sm);">
+                            Analyze multiple reviews from pasted text (separated by blank lines or ---).
+                        </p>
+                        <div class="code-block">
+// Request
+{
+  "reviews_text": "string (required)"
+}
+
+// Response (same structure as /scrape)
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Performance Metrics -->
+                <section class="docs-section">
+                    <h2>Performance Metrics</h2>
+                    <table style="width: 100%; border-collapse: collapse; border: var(--border-thin);">
+                        <thead>
+                            <tr style="background: var(--surface-container-low); border-bottom: var(--border-thin);">
+                                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Metric</th>
+                                <th style="padding: 12px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: var(--border-thin);">
+                                <td style="padding: 12px; font-size: 13px;">System Accuracy</td>
+                                <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-weight: 700; color: var(--primary-container);">92.35%</td>
+                            </tr>
+                            <tr style="border-bottom: var(--border-thin);">
+                                <td style="padding: 12px; font-size: 13px;">FAKE Recall</td>
+                                <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace; font-weight: 700; color: var(--primary-container);">99.7%</td>
+                            </tr>
+                            <tr style="border-bottom: var(--border-thin);">
+                                <td style="padding: 12px; font-size: 13px;">FAKE Precision</td>
+                                <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace;">86.77%</td>
+                            </tr>
+                            <tr style="border-bottom: var(--border-thin);">
+                                <td style="padding: 12px; font-size: 13px;">GENUINE Precision</td>
+                                <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace;">99.65%</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; font-size: 13px;">Test Set Size</td>
+                                <td style="padding: 12px; text-align: right; font-family: 'Inter', monospace;">2,000 reviews</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="margin-top: var(--space-sm);">
+                        The system catches 997 out of 1000 fake reviews (99.7% recall), making it highly effective for fraud prevention in production environments.
+                    </p>
+                </section>
+
+                <!-- Training Data -->
+                <section class="docs-section">
+                    <h2>Training Data</h2>
+                    <ul>
+                        <li><strong>BERT:</strong> 21,000 Amazon product reviews (balanced FAKE/GENUINE split)</li>
+                        <li><strong>GNN:</strong> YelpChi fraud graph with 40,432 reviewer nodes and 521,140 edges</li>
+                        <li><strong>Heuristics:</strong> Rule-based system derived from manual analysis of 5,000+ reviews</li>
+                    </ul>
+                </section>
+            </div>
+
+            <!-- Footer -->
+            <footer>
+                <div class="footer-text">
+                    ReviewGuard v4.2.0 — Professional-grade integrity for digital commerce
+                </div>
+                <div class="footer-text">
+                    <a href="https://github.com/Paragraut24/ml-project-ReviewGuard" target="_blank" class="footer-link">
+                        GitHub Repository
+                    </a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

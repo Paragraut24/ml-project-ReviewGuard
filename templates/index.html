@@ -1,1316 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ReviewGuard â€” Fake Review Detector</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236c3bff'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white'>R</text></svg>">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --purple: #6c3bff;
-      --blue: #3b82f6;
-      --purple-light: #a78bfa;
-      --blue-light: #60a5fa;
-      --green: #4ade80;
-      --red: #f87171;
-      --surface: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08);
-      --text-muted: #64748b;
-      --text-dim: #94a3b8;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #020818;
-      color: #e2e8f0;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* â”€â”€ Dot grid background â”€â”€ */
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0;
-      background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size: 32px 32px;
-      pointer-events: none;
-    }
-
-    /* â”€â”€ Background blobs â”€â”€ */
-    .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-    .blob {
-      position: absolute; border-radius: 50%;
-      filter: blur(130px); opacity: 0.15;
-    }
-    .blob-1 {
-      width: 700px; height: 700px; background: #6c3bff;
-      top: -200px; left: -200px;
-      animation: floatBlob1 12s ease-in-out infinite;
-    }
-    .blob-2 {
-      width: 600px; height: 600px; background: #3b82f6;
-      bottom: -150px; right: -150px;
-      animation: floatBlob2 15s ease-in-out infinite;
-    }
-    .blob-3 {
-      width: 450px; height: 450px; background: #8b5cf6;
-      top: 45%; left: 42%;
-      animation: floatBlob3 10s ease-in-out infinite;
-    }
-
-    @keyframes floatBlob1 {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%      { transform: translate(60px,40px) scale(1.08); }
-    }
-    @keyframes floatBlob2 {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%      { transform: translate(-50px,-30px) scale(1.1); }
-    }
-    @keyframes floatBlob3 {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%      { transform: translate(30px,-50px) scale(0.95); }
-    }
-
-    /* â”€â”€ Glassmorphism â”€â”€ */
-    .glass {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-    }
-
-    /* â”€â”€ Lucide icon sizing â”€â”€ */
-    svg.lucide {
-      display: inline-block;
-      vertical-align: middle;
-      flex-shrink: 0;
-    }
-
-    /* â”€â”€ Nav â”€â”€ */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 48px;
-      background: rgba(2,8,24,0.5);
-      backdrop-filter: blur(24px);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      transition: background 0.3s;
-    }
-    nav.scrolled { background: rgba(2,8,24,0.85); }
-
-    .nav-logo {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 18px; font-weight: 700; color: #fff;
-      text-decoration: none;
-    }
-    .nav-logo-icon {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: linear-gradient(135deg, var(--purple), var(--blue));
-      display: flex; align-items: center; justify-content: center;
-    }
-    .nav-logo-icon svg { width: 18px; height: 18px; color: #fff; }
-
-    .nav-links { display: flex; gap: 32px; }
-    .nav-links a {
-      color: var(--text-dim); text-decoration: none;
-      font-size: 14px; font-weight: 500;
-      transition: color 0.2s;
-    }
-    .nav-links a:hover { color: #fff; }
-
-    .nav-badge {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(108,59,255,0.15);
-      border: 1px solid rgba(108,59,255,0.35);
-      color: var(--purple-light); font-size: 12px; font-weight: 600;
-      padding: 6px 14px; border-radius: 20px;
-    }
-    .nav-badge svg { width: 13px; height: 13px; }
-
-    /* â”€â”€ Hero â”€â”€ */
-    .hero {
-      min-height: 100vh; position: relative; z-index: 1;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 120px 24px 80px;
-    }
-
-    .hero-tag {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(108,59,255,0.12);
-      border: 1px solid rgba(108,59,255,0.35);
-      border-radius: 50px; padding: 7px 18px;
-      font-size: 13px; font-weight: 500; color: var(--purple-light);
-      margin-bottom: 32px;
-      animation: fadeInDown 0.7s ease both;
-    }
-    .hero-tag svg { width: 14px; height: 14px; }
-    .pulse-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--purple-light);
-      animation: pulseDot 2s infinite;
-    }
-    @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
-
-    .hero h1 {
-      font-size: clamp(38px, 6.5vw, 76px);
-      font-weight: 800; line-height: 1.08; letter-spacing: -2px;
-      background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 40%, #93c5fd 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 22px;
-      animation: fadeInUp 0.8s 0.15s ease both;
-    }
-    .hero p {
-      font-size: clamp(15px, 2vw, 18px); color: var(--text-dim);
-      max-width: 560px; line-height: 1.75; margin-bottom: 44px;
-      animation: fadeInUp 0.8s 0.25s ease both;
-    }
-    .hero-btns {
-      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
-      animation: fadeInUp 0.8s 0.35s ease both;
-    }
-
-    .btn-primary {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: linear-gradient(135deg, var(--purple), var(--blue));
-      color: #fff; font-weight: 600; font-size: 15px;
-      padding: 14px 28px; border-radius: 12px; border: none;
-      cursor: pointer; text-decoration: none;
-      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 0 0 rgba(108,59,255,0);
-    }
-    .btn-primary:hover {
-      opacity: 0.9; transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(108,59,255,0.35);
-    }
-    .btn-primary svg { width: 16px; height: 16px; }
-
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.06);
-      color: #e2e8f0; font-weight: 600; font-size: 15px;
-      padding: 14px 28px; border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.12);
-      cursor: pointer; text-decoration: none;
-      transition: background 0.2s, transform 0.2s;
-    }
-    .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
-    .btn-secondary svg { width: 16px; height: 16px; }
-
-    /* â”€â”€ Stats â”€â”€ */
-    .stats {
-      display: flex; max-width: 720px; width: 100%;
-      margin: 64px auto 0;
-      animation: fadeInUp 0.9s 0.45s ease both;
-    }
-    .stat-item {
-      flex: 1; text-align: center; padding: 28px 16px;
-      border-right: 1px solid var(--border);
-    }
-    .stat-item:last-child { border-right: none; }
-    .stat-num {
-      font-size: 34px; font-weight: 800; letter-spacing: -1px;
-      background: linear-gradient(135deg, var(--purple-light), var(--blue-light));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* â”€â”€ Section commons â”€â”€ */
-    .section-wrap { position: relative; z-index: 1; padding: 100px 24px; max-width: 1120px; margin: 0 auto; }
-
-    .section-tag {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(108,59,255,0.1);
-      border: 1px solid rgba(108,59,255,0.28);
-      color: var(--purple-light); font-size: 11px; font-weight: 700;
-      padding: 5px 14px; border-radius: 50px;
-      text-transform: uppercase; letter-spacing: 1.2px;
-      margin-bottom: 16px;
-    }
-    .section-tag svg { width: 12px; height: 12px; }
-
-    .section-title {
-      font-size: clamp(30px, 4vw, 48px); font-weight: 800;
-      letter-spacing: -1.2px; line-height: 1.1; margin-bottom: 14px;
-    }
-    .section-sub { color: var(--text-muted); font-size: 16px; max-width: 500px; line-height: 1.75; }
-
-    /* â”€â”€ Scroll reveal â”€â”€ */
-    .reveal {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.65s ease, transform 0.65s ease;
-    }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
-
-    /* â”€â”€ How it works â”€â”€ */
-    .steps-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px; margin-top: 56px;
-    }
-    .step-card {
-      padding: 32px 28px; border-radius: 20px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      position: relative; overflow: hidden;
-      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
-      cursor: default;
-    }
-    .step-card::before {
-      content: '';
-      position: absolute; inset: 0; opacity: 0;
-      background: linear-gradient(135deg, rgba(108,59,255,0.08), rgba(59,130,246,0.08));
-      transition: opacity 0.3s;
-    }
-    .step-card:hover { border-color: rgba(108,59,255,0.45); transform: translateY(-6px); box-shadow: 0 20px 48px rgba(0,0,0,0.3); }
-    .step-card:hover::before { opacity: 1; }
-
-    .step-icon {
-      width: 50px; height: 50px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 22px;
-    }
-    .step-icon svg { width: 22px; height: 22px; }
-    .icon-purple { background: rgba(108,59,255,0.18); color: var(--purple-light); }
-    .icon-blue   { background: rgba(59,130,246,0.18); color: var(--blue-light); }
-    .icon-teal   { background: rgba(20,184,166,0.18); color: #2dd4bf; }
-    .icon-pink   { background: rgba(236,72,153,0.18); color: #f472b6; }
-    .icon-amber  { background: rgba(245,158,11,0.18); color: #fbbf24; }
-    .icon-green  { background: rgba(34,197,94,0.18);  color: #4ade80; }
-
-    .step-num {
-      font-size: 11px; font-weight: 700; color: #334155;
-      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
-    }
-    .step-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
-    .step-card p  { font-size: 14px; color: var(--text-muted); line-height: 1.75; }
-
-    /* Connector arrow between steps */
-    .steps-grid .step-card:not(:last-child)::after {
-      content: '';
-      position: absolute; right: -11px; top: 50%;
-      transform: translateY(-50%);
-      width: 20px; height: 20px;
-      background: rgba(108,59,255,0.3);
-      clip-path: polygon(0 25%, 60% 25%, 60% 0, 100% 50%, 60% 100%, 60% 75%, 0 75%);
-      display: none; /* show only on large screens via media query below */
-    }
-
-    /* â”€â”€ Features â”€â”€ */
-    .features-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 18px; margin-top: 56px;
-    }
-    .feature-card {
-      padding: 28px 26px; border-radius: 18px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      display: flex; flex-direction: column; gap: 10px;
-      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
-      cursor: default;
-    }
-    .feature-card:hover {
-      border-color: rgba(99,102,241,0.4); transform: translateY(-4px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
-    }
-    .feature-icon-wrap {
-      width: 46px; height: 46px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .feature-icon-wrap svg { width: 20px; height: 20px; }
-    .feature-card h3 { font-size: 16px; font-weight: 700; }
-    .feature-card p  { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
-
-
-    .charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px; margin-top: 48px;
-}
-.chart-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px; padding: 24px;
-  transition: border-color 0.3s, transform 0.3s;
-}
-.chart-card:hover { border-color: rgba(108,59,255,0.4); transform: translateY(-4px); }
-.chart-label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 700; color: var(--text-dim);
-  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
-}
-.chart-label svg { width: 14px; height: 14px; }
-.chart-img {
-  width: 100%; border-radius: 12px;
-  border: 1px solid var(--border);
-}
-.chart-caption {
-  font-size: 13px; color: var(--text-muted);
-  margin-top: 12px; text-align: center; line-height: 1.5;
-}
-
-
-    /* â”€â”€ Detector section â”€â”€ */
-    #detector {
-      position: relative; z-index: 1;
-      padding: 100px 24px; display: flex; flex-direction: column; align-items: center;
-    }
-    .detector-wrap { width: 100%; max-width: 720px; }
-    .detector-header { text-align: center; margin-bottom: 40px; }
-
-    /* Animated gradient border on the tool card */
-    .detector-card {
-      position: relative; padding: 36px;
-      background: rgba(255,255,255,0.04);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 24px;
-      overflow: hidden;
-    }
-    .detector-card::before {
-      content: '';
-      position: absolute; inset: -1px; border-radius: 24px; z-index: -1;
-      background: linear-gradient(135deg, rgba(108,59,255,0.6), rgba(59,130,246,0.6), rgba(139,92,246,0.6), rgba(108,59,255,0.6));
-      background-size: 300% 300%;
-      animation: gradBorder 5s linear infinite;
-    }
-    @keyframes gradBorder {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    .detector-card::after {
-      content: '';
-      position: absolute; inset: 1px; border-radius: 23px; z-index: -1;
-      background: #0b1228;
-    }
-
-    .sample-label {
-      font-size: 12px; color: var(--text-muted); margin-bottom: 12px;
-      font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .sample-label svg { width: 13px; height: 13px; }
-
-    .sample-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;
-    }
-    .sample-btn {
-      padding: 10px 14px; border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03); color: var(--text-dim);
-      font-size: 13px; font-weight: 500; cursor: pointer;
-      transition: all 0.2s; text-align: left;
-      display: flex; align-items: center; gap: 8px;
-      font-family: 'Inter', sans-serif;
-    }
-    .sample-btn:hover {
-      background: rgba(255,255,255,0.07); color: #e2e8f0;
-      border-color: rgba(255,255,255,0.18); transform: translateY(-1px);
-    }
-    .badge {
-      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
-      display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
-    }
-    .badge svg { width: 10px; height: 10px; }
-    .badge-fake { background: rgba(239,68,68,0.18); color: #f87171; }
-    .badge-real { background: rgba(34,197,94,0.18); color: #4ade80; }
-
-    .divider { height: 1px; background: var(--border); margin: 20px 0; }
-
-    .input-area {
-      width: 100%; min-height: 130px; resize: vertical;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 14px; padding: 16px 18px;
-      color: #e2e8f0; font-size: 15px; font-family: 'Inter', sans-serif;
-      line-height: 1.65; outline: none;
-      transition: border-color 0.25s, box-shadow 0.25s;
-      margin-bottom: 14px;
-    }
-    .input-area:focus {
-      border-color: rgba(108,59,255,0.5);
-      box-shadow: 0 0 0 3px rgba(108,59,255,0.12);
-    }
-    .input-area::placeholder { color: #334155; }
-
-    .analyze-btn {
-      width: 100%; padding: 16px;
-      background: linear-gradient(135deg, var(--purple), var(--blue));
-      color: #fff; font-size: 15px; font-weight: 700;
-      border: none; border-radius: 12px; cursor: pointer;
-      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      font-family: 'Inter', sans-serif; letter-spacing: 0.3px;
-    }
-    .analyze-btn svg { width: 17px; height: 17px; }
-    .analyze-btn:hover:not(:disabled) {
-      opacity: 0.9; transform: translateY(-2px);
-      box-shadow: 0 10px 36px rgba(108,59,255,0.35);
-    }
-    .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* â”€â”€ Result â”€â”€ */
-    .result-card {
-      margin-top: 22px; padding: 28px; border-radius: 18px;
-      display: none;
-      animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
-    }
-    @keyframes slideUp {
-      from { opacity:0; transform: translateY(18px); }
-      to   { opacity:1; transform: translateY(0); }
-    }
-    .result-card.fake         { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.28); }
-    .result-card.genuine      { background: rgba(34,197,94,0.08);   border: 1px solid rgba(34,197,94,0.28); }
-    .result-card.unverifiable { background: rgba(245,158,11,0.08);  border: 1px solid rgba(245,158,11,0.30); }
-
-    .result-verdict {
-      display: flex; align-items: center; gap: 12px;
-      font-size: 22px; font-weight: 800; margin-bottom: 24px;
-    }
-    .verdict-icon-wrap {
-      width: 44px; height: 44px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .verdict-icon-wrap svg { width: 22px; height: 22px; }
-    .result-card.fake         .verdict-icon-wrap { background: rgba(239,68,68,0.2);  color: #f87171; }
-    .result-card.genuine      .verdict-icon-wrap { background: rgba(34,197,94,0.2);   color: #4ade80; }
-    .result-card.unverifiable .verdict-icon-wrap { background: rgba(245,158,11,0.2);  color: #fbbf24; }
-    .result-card.fake         .result-verdict { color: #f87171; }
-    .result-card.genuine      .result-verdict { color: #4ade80; }
-    .result-card.unverifiable .result-verdict { color: #fbbf24; }
-
-    .result-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-    .metric {
-      background: rgba(0,0,0,0.25); border-radius: 12px;
-      padding: 18px 12px; text-align: center;
-    }
-    .metric-val {
-      font-size: 28px; font-weight: 800; margin-bottom: 4px;
-      animation: countUp 0.6s ease both;
-    }
-    @keyframes countUp { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
-    .metric-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    .result-card.fake         .metric-val { color: #f87171; }
-    .result-card.genuine      .metric-val { color: #4ade80; }
-    .result-card.unverifiable .metric-val { color: #fbbf24; }
-    .reasons-panel {
-  margin-top: 20px;
-  padding: 20px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.reasons-title {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 1px;
-  color: var(--text-dim); margin-bottom: 14px;
-}
-.reasons-title svg { width: 14px; height: 14px; }
-.reasons-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-.reasons-list li {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 14px; color: #94a3b8; line-height: 1.6;
-  animation: fadeInUp 0.4s ease both;
-}
-.reason-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  margin-top: 7px; flex-shrink: 0;
-}
-    .result-card.fake         .reason-dot { background: #f87171; }
-    .result-card.genuine      .reason-dot { background: #4ade80; }
-    .result-card.unverifiable .reason-dot { background: #fbbf24; }
-
-    /* â”€â”€ Spinner â”€â”€ */
-    .spinner {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.65s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* â”€â”€ Footer â”€â”€ */
-    footer {
-      position: relative; z-index: 1;
-      text-align: center; padding: 48px 24px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-    }
-    .footer-logo {
-      display: inline-flex; align-items: center; gap: 9px;
-      font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 12px;
-    }
-    .footer-logo-icon {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--purple), var(--blue));
-      display: flex; align-items: center; justify-content: center;
-    }
-    .footer-logo-icon svg { width: 15px; height: 15px; color: #fff; }
-    .footer-sub { font-size: 13px; color: #334155; }
-    .footer-sub span { color: #475569; }
-
-    /* â”€â”€ Base animations â”€â”€ */
-    @keyframes fadeInUp   { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
-    @keyframes fadeInDown { from { opacity:0; transform: translateY(-18px); } to { opacity:1; transform: translateY(0); } }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-
-    /* ── Demo Tabs ── */
-    .demo-tabs {
-      display: flex; gap: 6px; margin-bottom: 28px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 14px; padding: 5px;
-    }
-    .demo-tab {
-      flex: 1; padding: 11px 16px; border-radius: 10px;
-      border: none; background: transparent;
-      color: var(--text-muted); font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all 0.22s;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      font-family: 'Inter', sans-serif;
-    }
-    .demo-tab svg { width: 15px; height: 15px; }
-    .demo-tab.active {
-      background: linear-gradient(135deg, var(--purple), var(--blue));
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(108,59,255,0.3);
-    }
-    .demo-tab:not(.active):hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
-
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    /* Sub-mode toggle */
-    .sub-mode-wrap {
-      display: flex; gap: 6px; margin-bottom: 18px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border); border-radius: 10px; padding: 4px;
-    }
-    .sub-mode-btn {
-      flex: 1; padding: 8px 12px; border-radius: 7px; border: none;
-      background: transparent; color: var(--text-muted);
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      font-family: 'Inter', sans-serif; transition: all 0.2s;
-    }
-    .sub-mode-btn svg { width: 13px; height: 13px; }
-    .sub-mode-btn.active { background: rgba(108,59,255,0.2); color: var(--purple-light); }
-    .sub-mode-btn:not(.active):hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
-    .load-demo-btn {
-      background: rgba(108,59,255,0.12); border: 1px solid rgba(108,59,255,0.3);
-      color: var(--purple-light); font-size: 12px; font-weight: 600;
-      padding: 6px 14px; border-radius: 8px; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 5px;
-      font-family: 'Inter', sans-serif; transition: all 0.2s;
-    }
-    .load-demo-btn:hover { background: rgba(108,59,255,0.22); }
-    .load-demo-btn svg { width: 12px; height: 12px; }
-
-    /* URL input */
-    .url-input-wrap { position: relative; margin-bottom: 14px; }
-    .url-input {
-      width: 100%; padding: 15px 18px 15px 46px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.09); border-radius: 14px;
-      color: #e2e8f0; font-size: 15px; font-family: 'Inter', sans-serif;
-      outline: none; transition: border-color 0.25s, box-shadow 0.25s;
-    }
-    .url-input:focus { border-color: rgba(108,59,255,0.5); box-shadow: 0 0 0 3px rgba(108,59,255,0.12); }
-    .url-input::placeholder { color: #334155; }
-    .url-input-icon {
-      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-      color: var(--text-muted);
-    }
-    .url-input-icon svg { width: 17px; height: 17px; }
-
-    .url-hint {
-      font-size: 12px; color: var(--text-muted);
-      margin-bottom: 14px; display: flex; align-items: center; gap: 5px;
-    }
-    .url-hint svg { width: 12px; height: 12px; }
-
-    /* Scrape result */
-    .scrape-result { margin-top: 22px; display: none; animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
-
-    .trust-banner {
-      padding: 22px 28px; border-radius: 18px;
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 18px; flex-wrap: wrap; gap: 16px;
-    }
-    .trust-banner.low    { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.3); }
-    .trust-banner.mid    { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
-    .trust-banner.high   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3); }
-
-    .trust-left { display: flex; align-items: center; gap: 14px; }
-    .trust-icon {
-      width: 48px; height: 48px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .trust-icon svg { width: 24px; height: 24px; }
-    .trust-banner.low  .trust-icon { background: rgba(34,197,94,0.2);  color: #4ade80; }
-    .trust-banner.mid  .trust-icon { background: rgba(245,158,11,0.2); color: #fbbf24; }
-    .trust-banner.high .trust-icon { background: rgba(239,68,68,0.2);  color: #f87171; }
-    .trust-banner.low  .trust-verdict { color: #4ade80; }
-    .trust-banner.mid  .trust-verdict { color: #fbbf24; }
-    .trust-banner.high .trust-verdict { color: #f87171; }
-
-    .trust-verdict { font-size: 20px; font-weight: 800; }
-    .trust-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-
-    .trust-stats { display: flex; gap: 18px; flex-wrap: wrap; }
-    .trust-stat { text-align: center; }
-    .trust-stat-num { font-size: 28px; font-weight: 800; }
-    .trust-stat-lbl { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
-    .trust-banner.low  .trust-stat-num { color: #4ade80; }
-    .trust-banner.mid  .trust-stat-num { color: #fbbf24; }
-    .trust-banner.high .trust-stat-num { color: #f87171; }
-
-    /* Review list */
-    .review-items { display: flex; flex-direction: column; gap: 12px; }
-    .review-item {
-      padding: 18px 20px; border-radius: 14px;
-      background: rgba(0,0,0,0.2);
-      border-left: 3px solid transparent;
-      transition: transform 0.2s;
-    }
-    .review-item:hover { transform: translateX(3px); }
-    .review-item.fake    { border-left-color: #f87171; }
-    .review-item.genuine { border-left-color: #4ade80; }
-    .review-item-head {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
-    }
-    .review-item-badge {
-      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .review-item-badge svg { width: 11px; height: 11px; }
-    .review-item.fake    .review-item-badge { background: rgba(239,68,68,0.18); color: #f87171; }
-    .review-item.genuine .review-item-badge { background: rgba(34,197,94,0.18);  color: #4ade80; }
-    .review-item-conf { font-size: 12px; color: var(--text-muted); }
-    .review-item-text { font-size: 13px; color: #94a3b8; line-height: 1.65; }
-
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      nav { padding: 14px 20px; }
-      .nav-links { display: none; }
-      .sample-grid { grid-template-columns: 1fr; }
-      .trust-banner { flex-direction: column; align-items: flex-start; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewGuard — Forensic Analysis Workbench</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23006c49'/><text x='50%' y='55%' font-size='18' text-anchor='middle' dominant-baseline='middle' fill='white' font-weight='700'>R</text></svg>">
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-
-<div class="bg">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-</div>
-
-<!-- Nav -->
-<nav id="navbar">
-  <a href="#" class="nav-logo">
-    <div class="nav-logo-icon">
-      <i data-lucide="shield-check"></i>
-    </div>
-    ReviewGuard
-  </a>
-  <div class="nav-links">
-    <a href="#how-it-works">How it works</a>
-    <a href="#features">Features</a>
-    <a href="#detector">Try it live</a>
-    <a href="#results">Performance</a>
-  </div>
-  <div class="nav-badge">
-    <i data-lucide="cpu"></i>
-    BERT + GNN
-  </div>
-</nav>
-
-<!-- Hero -->
-<div class="hero">
-  <div class="hero-tag">
-    <div class="pulse-dot"></div>
-    <i data-lucide="zap" style="width:13px;height:13px;"></i>
-    AI-Powered Review Intelligence
-  </div>
-  <h1>Detect Fake Reviews<br/>Instantly</h1>
-  <p>A dual-layer detection system combining BERT language understanding with Graph Neural Network behavioral analysis to identify fraudulent product reviews in real time.</p>
-  <div class="hero-btns">
-    <a href="#detector" class="btn-primary">
-      Try the Detector
-      <i data-lucide="arrow-right"></i>
-    </a>
-    <a href="#how-it-works" class="btn-secondary">
-      <i data-lucide="book-open"></i>
-      See How it Works
-    </a>
-  </div>
-
-  <div class="glass stats">
-    <div class="stat-item">
-      <div class="stat-num" data-count="87.5">0</div>
-      <div class="stat-label">BERT Accuracy %</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num" data-count="83.2">0</div>
-      <div class="stat-label">GNN Accuracy %</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">2-Layer</div>
-      <div class="stat-label">Detection Model</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">&lt;1s</div>
-      <div class="stat-label">Response Time</div>
-    </div>
-  </div>
-</div>
-
-<!-- How it Works -->
-<div class="section-wrap" id="how-it-works">
-  <div class="reveal">
-    <div class="section-tag"><i data-lucide="git-branch"></i> Architecture</div>
-    <div class="section-title">How it Works</div>
-    <div class="section-sub">Two powerful models working in tandem to analyze both the language and behavioral patterns of any review.</div>
-  </div>
-
-  <div class="steps-grid">
-    <div class="step-card reveal reveal-delay-1">
-      <div class="step-icon icon-purple"><i data-lucide="file-text"></i></div>
-      <div class="step-num">Step 01</div>
-      <h3>Text Input</h3>
-      <p>Paste any product review. The system preprocesses and tokenizes the text for downstream analysis.</p>
-    </div>
-    <div class="step-card reveal reveal-delay-2">
-      <div class="step-icon icon-blue"><i data-lucide="brain"></i></div>
-      <div class="step-num">Step 02</div>
-      <h3>BERT Analysis</h3>
-      <p>A fine-tuned BERT model reads the review and scores linguistic patterns — vague praise, repetition, and sentiment signals.</p>
-    </div>
-    <div class="step-card reveal reveal-delay-3">
-      <div class="step-icon icon-teal"><i data-lucide="share-2"></i></div>
-      <div class="step-num">Step 03</div>
-      <h3>GNN Layer</h3>
-      <p>A Graph Neural Network models reviewer behavior — posting frequency, account age, and review clustering patterns.</p>
-    </div>
-    <div class="step-card reveal reveal-delay-4">
-      <div class="step-icon icon-pink"><i data-lucide="layers"></i></div>
-      <div class="step-num">Step 04</div>
-      <h3>Fusion & Verdict</h3>
-      <p>Both scores are fused (65% BERT + 35% GNN) with heuristic boosters to produce a final FAKE or GENUINE verdict.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Features -->
-<div class="section-wrap" id="features">
-  <div class="reveal">
-    <div class="section-tag"><i data-lucide="sparkles"></i> Features</div>
-    <div class="section-title">Why ReviewGuard?</div>
-    <div class="section-sub">Built with state-of-the-art NLP and graph learning to handle even the most sophisticated fake reviews.</div>
-  </div>
-
-  <div class="features-grid">
-    <div class="feature-card reveal reveal-delay-1">
-      <div class="feature-icon-wrap icon-purple"><i data-lucide="scan-text"></i></div>
-      <h3>Linguistic Pattern Detection</h3>
-      <p>BERT understands context, not just keywords. It catches subtle signals like vague superlatives, over-positive sentiment, and unnatural sentence structures.</p>
-    </div>
-    <div class="feature-card reveal reveal-delay-2">
-      <div class="feature-icon-wrap icon-blue"><i data-lucide="bar-chart-2"></i></div>
-      <h3>Behavioral Graph Analysis</h3>
-      <p>The GNN layer models reviewer networks to spot bots, coordinated fake review campaigns, and suspicious posting patterns.</p>
-    </div>
-    <div class="feature-card reveal reveal-delay-3">
-      <div class="feature-icon-wrap icon-teal"><i data-lucide="timer"></i></div>
-      <h3>Real-Time Inference</h3>
-      <p>Results are returned in under a second, making it suitable for live e-commerce platforms and browser extension integration.</p>
-    </div>
-    <div class="feature-card reveal reveal-delay-1">
-      <div class="feature-icon-wrap icon-pink"><i data-lucide="shield"></i></div>
-      <h3>Heuristic Safety Net</h3>
-      <p>Rule-based boosters catch obvious spam patterns like exclamation mark overload and ALL CAPS abuse that pure ML might under-score.</p>
-    </div>
-    <div class="feature-card reveal reveal-delay-2">
-      <div class="feature-icon-wrap icon-amber"><i data-lucide="target"></i></div>
-      <h3>Transparent Scoring</h3>
-      <p>Every result breaks down Fake Probability, BERT Score, and GNN Score — so you understand exactly why a review was flagged.</p>
-    </div>
-    <div class="feature-card reveal reveal-delay-3">
-      <div class="feature-icon-wrap icon-green"><i data-lucide="globe"></i></div>
-      <h3>Platform Agnostic</h3>
-      <p>Works on reviews from Amazon, Flipkart, Google Maps, or any platform. Paste any text and get an instant verdict.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Charts Section -->
-<div class="section-wrap" id="results">
-  <div class="reveal">
-    <div class="section-tag"><i data-lucide="bar-chart-2"></i> Performance</div>
-    <div class="section-title">Model Evaluation</div>
-    <div class="section-sub">Tested on 900 real Amazon reviews — 450 fake, 450 genuine.</div>
-  </div>
-
-  <div class="charts-grid reveal">
-    <div class="chart-card">
-      <div class="chart-label">
-        <i data-lucide="grid"></i> Confusion Matrix
-      </div>
-      <img src="/static/confusion_matrix.png" alt="Confusion Matrix" class="chart-img"/>
-      <div class="chart-caption">412 genuine + 399 fake correctly classified out of 900 reviews</div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-label">
-        <i data-lucide="trending-up"></i> Accuracy Comparison
-      </div>
-      <img src="/static/accuracy_chart.png" alt="Accuracy Chart" class="chart-img"/>
-      <div class="chart-caption">Fused model outperforms individual BERT and GNN layers</div>
-    </div>
-  </div>
-</div>
-
-
-<!-- Detector -->
-<div id="detector">
-  <div class="detector-wrap">
-    <div class="detector-header reveal">
-      <div class="section-tag"><i data-lucide="play-circle"></i> Live Demo</div>
-      <div class="section-title">Try it Yourself</div>
-      <p style="color:var(--text-muted);font-size:15px;margin-top:10px;line-height:1.7;">
-        Paste any product review or pick a sample below to see the model in action.
-      </p>
-    </div>
-
-    <div class="detector-card reveal">
-
-      <!-- Mode tabs -->
-      <div class="demo-tabs">
-        <button class="demo-tab active" id="tabText" onclick="switchTab('text')">
-          <i data-lucide="file-text"></i> Analyze Review
-        </button>
-        <button class="demo-tab" id="tabUrl" onclick="switchTab('url')">
-          <i data-lucide="link"></i> Scan Product URL
-        </button>
-      </div>
-
-      <!-- TAB: Text analysis -->
-      <div class="tab-panel active" id="panelText">
-        <div class="sample-label">
-          <i data-lucide="list"></i>
-          Try a sample review
-        </div>
-        <div class="sample-grid">
-          <button class="sample-btn" onclick="loadSample('fake1')">
-            <span class="badge badge-fake"><i data-lucide="x"></i> FAKE</span>
-            Spam exclamation review
-          </button>
-          <button class="sample-btn" onclick="loadSample('fake2')">
-            <span class="badge badge-fake"><i data-lucide="x"></i> FAKE</span>
-            Repetitive praise review
-          </button>
-          <button class="sample-btn" onclick="loadSample('real1')">
-            <span class="badge badge-real"><i data-lucide="check"></i> REAL</span>
-            Genuine purchase story
-          </button>
-          <button class="sample-btn" onclick="loadSample('real2')">
-            <span class="badge badge-real"><i data-lucide="check"></i> REAL</span>
-            Honest negative review
-          </button>
-        </div>
-        <div class="divider"></div>
-        <textarea
-          id="reviewInput"
-          class="input-area"
-          placeholder="Paste a product review here to analyze it for authenticity..."
-        ></textarea>
-        <button class="analyze-btn" id="analyzeBtn" onclick="analyzeReview()">
-          <i data-lucide="search"></i>
-          Analyze Review
-        </button>
-        <div class="result-card" id="resultCard">
-          <div class="result-verdict">
-          <div class="verdict-icon-wrap" id="verdictIconWrap">
-            <i id="verdictIcon" data-lucide="alert-triangle"></i>
-          </div>
-          <span id="verdictText"></span>
-        </div>
-        <div class="result-metrics">
-          <div class="metric">
-            <div class="metric-val" id="metricFake">—</div>
-            <div class="metric-label">Fake Probability</div>
-          </div>
-          <div class="metric">
-            <div class="metric-val" id="metricBert">—</div>
-            <div class="metric-label">BERT Score</div>
-          </div>
-          <div class="metric">
-            <div class="metric-val" id="metricHeuristic">—</div>
-            <div class="metric-label">Heuristic Score</div>
-          </div>
-          <div class="metric">
-            <div class="metric-val" id="metricGnn">—</div>
-            <div class="metric-label">GNN Score</div>
-          </div>
-        </div>
-
-        <!-- Reasons Panel -->
-        <div class="reasons-panel" id="reasonsPanel">
-          <div class="reasons-title">
-            <i data-lucide="list-checks"></i>
-            <span id="reasonsTitle">Detected Signals</span>
-          </div>
-          <ul class="reasons-list" id="reasonsList"></ul>
-        </div>
-        </div>
-      </div>
-
-      <!-- TAB: URL scanning -->
-      <div class="tab-panel" id="panelUrl">
-
-        <!-- Sub-mode toggle -->
-        <div class="sub-mode-wrap">
-          <button class="sub-mode-btn active" id="subBtnUrl" onclick="switchSubMode('url')">
-            <i data-lucide="link"></i> URL Scrape
-          </button>
-          <button class="sub-mode-btn" id="subBtnBulk" onclick="switchSubMode('bulk')">
-            <i data-lucide="clipboard-list"></i> Paste Reviews
-          </button>
-        </div>
-
-        <!-- URL sub-panel -->
-        <div id="subPanelUrl">
-          <div class="url-input-wrap">
-            <div class="url-input-icon"><i data-lucide="link"></i></div>
-            <input type="url" id="urlInput" class="url-input"
-              placeholder="https://www.amazon.in/dp/B09... or flipkart.com/..."/>
-          </div>
-          <div class="url-hint">
-            <i data-lucide="info"></i>
-            Amazon &amp; Flipkart may block automated scrapers. Use &ldquo;Paste Reviews&rdquo; for a reliable demo.
-          </div>
-          <button class="analyze-btn" id="scanBtn" onclick="scanUrl()">
-            <i data-lucide="scan-search"></i>
-            Scan Product Reviews
-          </button>
-        </div>
-
-        <!-- Bulk paste sub-panel -->
-        <div id="subPanelBulk" style="display:none">
-          <div class="url-hint" style="margin-bottom:10px;">
-            <i data-lucide="info"></i>
-            Paste multiple reviews below &mdash; separate each with a blank line or <code>---</code>. Up to 15 reviews.
-          </div>
-          <div style="text-align:right;margin-bottom:8px;">
-            <button class="load-demo-btn" onclick="loadDemoReviews()">
-              <i data-lucide="flask-conical"></i> Load Demo Reviews
-            </button>
-          </div>
-          <textarea id="bulkInput" class="input-area" style="min-height:180px"
-            placeholder="Paste review 1 here...&#10;&#10;Paste review 2 here...&#10;&#10;---&#10;Paste review 3 here..."></textarea>
-          <button class="analyze-btn" id="bulkBtn" onclick="analyzeBulk()">
-            <i data-lucide="layers"></i>
-            Analyse All Reviews
-          </button>
-        </div>
-
-        <div class="scrape-result" id="scrapeResult">
-          <!-- Trust banner -->
-          <div class="trust-banner" id="trustBanner">
-            <div class="trust-left">
-              <div class="trust-icon" id="trustIcon"><i data-lucide="shield"></i></div>
-              <div>
-                <div class="trust-verdict" id="trustVerdict"></div>
-                <div class="trust-sub" id="trustSub"></div>
-              </div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo" style="text-decoration: none;">ReviewGuard</a>
             </div>
-            <div class="trust-stats">
-              <div class="trust-stat">
-                <div class="trust-stat-num" id="statFakePct"></div>
-                <div class="trust-stat-lbl">Fake</div>
-              </div>
-              <div class="trust-stat">
-                <div class="trust-stat-num" id="statTotal"></div>
-                <div class="trust-stat-lbl">Reviews</div>
-              </div>
-              <div class="trust-stat">
-                <div class="trust-stat-num" id="statTrust"></div>
-                <div class="trust-stat-lbl">Trust</div>
-              </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Navigation</div>
+                    <a href="/workbench" class="nav-item active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span>Workbench</span>
+                    </a>
+                    <a href="/reports" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Reports</span>
+                    </a>
+                    <a href="/docs" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span>Docs</span>
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <a href="/settings" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"></button>
             </div>
-          </div>
-          <!-- Per-review list -->
-          <div class="review-items" id="reviewItems"></div>
-        </div>
-      </div>
+        </aside>
 
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1 class="page-title">Analysis Workbench</h1>
+                <p class="page-subtitle">Advanced forensics for synthetic content detection</p>
+            </header>
+
+            <!-- Two Column Layout: Input Left, Results Right -->
+            <div class="workbench-grid">
+                <!-- Left Column: Input -->
+                <div style="animation: fadeInUp 0.4s ease-out;">
+                    <!-- Input Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Evidence Input Buffer</div>
+                            <div class="card-badge">Ready</div>
+                        </div>
+                        <div class="card-body">
+                            <textarea 
+                                id="reviewInput" 
+                                placeholder="PASTE RAW REVIEW TEXT FOR FORENSIC INSPECTION..."
+                            ></textarea>
+                            
+                            <!-- Star Rating -->
+                            <div class="star-rating-container">
+                                <label class="star-rating-label">
+                                    Star Rating
+                                    <span class="star-rating-note">(optional — improves accuracy)</span>
+                                </label>
+                                <div class="star-rating-wrapper">
+                                    <div class="stars" id="starRating">
+                                        <svg class="star" data-rating="1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                        <svg class="star" data-rating="2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                        <svg class="star" data-rating="3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                        <svg class="star" data-rating="4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                        <svg class="star" data-rating="5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                    </div>
+                                    <span class="star-rating-text" id="starRatingText">Not provided</span>
+                                </div>
+                            </div>
+                            
+                            <button class="btn-primary" id="analyzeBtn" onclick="analyzeReview()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                </svg>
+                                <span>Execute Trace</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Demo Reviews -->
+                    <div class="demo-section">
+                        <div class="demo-label">Sample Test Cases</div>
+                        <div class="demo-buttons">
+                            <button class="demo-btn" onclick="loadDemo('fake1')">
+                                Fake Review
+                            </button>
+                            <button class="demo-btn" onclick="loadDemo('genuine')">
+                                Genuine Review
+                            </button>
+                            <button class="demo-btn" onclick="loadDemo('unverifiable')">
+                                Unverifiable
+                            </button>
+                            <button class="demo-btn" onclick="loadDemo('fake2')">
+                                Spam Signals
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Stats -->
+                    <div class="card" style="animation-delay: 0.3s;">
+                        <div class="card-header">
+                            <div class="card-title">System Performance</div>
+                        </div>
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-label">Accuracy</div>
+                                <div class="metric-value">92.35%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">FAKE Recall</div>
+                                <div class="metric-value">99.7%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Samples</div>
+                                <div class="metric-value">2,000</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Layers</div>
+                                <div class="metric-value">3</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Results -->
+                <div class="result-card" id="resultCard" style="animation: fadeInUp 0.4s ease-out 0.2s both;">
+                    <!-- Results will be inserted here by JavaScript -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Analysis Verdict</div>
+                            <div class="card-badge" style="background: rgba(108, 122, 113, 0.1); border-color: var(--outline); color: var(--outline);">Awaiting Input</div>
+                        </div>
+                        <div class="card-body" style="text-align: center; padding: 60px 24px; color: var(--on-surface-variant);">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 16px; opacity: 0.3;">
+                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">No Analysis Running</div>
+                            <div style="font-size: 12px;">Submit a review to begin forensic trace</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer>
+                <div class="footer-text">
+                    ReviewGuard v4.2.0 — Professional-grade integrity for digital commerce
+                </div>
+                <div class="footer-text">
+                    <a href="https://github.com/Paragraut24/ml-project-ReviewGuard" target="_blank" class="footer-link">
+                        GitHub Repository
+                    </a>
+                </div>
+                <div class="footer-text">
+                    © 2026 ReviewGuard. All Rights Reserved.
+                </div>
+            </footer>
+        </main>
     </div>
-  </div>
-</div>
 
-<!-- Footer -->
-<footer>
-  <div class="footer-logo">
-    <div class="footer-logo-icon"><i data-lucide="shield-check"></i></div>
-    ReviewGuard
-  </div>
-  <div class="footer-sub">
-    Built with BERT + Graph Neural Networks &nbsp;·&nbsp;
-    <span>ML Project 2026</span>
-  </div>
-</footer>
-
-<script>
-  lucide.createIcons();
-
-  window.addEventListener('scroll', () => {
-    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
-  });
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting && e.target.dataset.count) {
-        const target = parseFloat(e.target.dataset.count);
-        const duration = 1600;
-        const start = performance.now();
-        const tick = (now) => {
-          const p = Math.min((now - start) / duration, 1);
-          const ease = 1 - Math.pow(1 - p, 3);
-          e.target.textContent = (ease * target).toFixed(1) + '%';
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-        counterObserver.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.5 });
-  document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
-
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
-
-  function switchTab(tab) {
-    document.getElementById('panelText').classList.toggle('active', tab === 'text');
-    document.getElementById('panelUrl').classList.toggle('active', tab === 'url');
-    document.getElementById('tabText').classList.toggle('active', tab === 'text');
-    document.getElementById('tabUrl').classList.toggle('active', tab === 'url');
-    lucide.createIcons();
-  }
-
-  const samples = {
-    fake1: "Amazing product!! Best purchase EVER!! Everyone needs this!! So happy with this!! Will buy again!!",
-    fake2: "I love this product. It is great and works perfectly. I love it. Great quality. I have one in my bathroom and one in my office.",
-    real1: "Bought this for my mom after her old one broke during the move. Setup was easy but the remote took forever to sync. Works perfectly now though.",
-    real2: "Returned this after 3 days. The zipper started fraying immediately and the stitching on the left side came undone. For this price I expected better."
-  };
-
-  function loadSample(key) {
-    document.getElementById('reviewInput').value = samples[key];
-    document.getElementById('resultCard').style.display = 'none';
-  }
-
-  async function analyzeReview() {
-    const review = document.getElementById('reviewInput').value.trim();
-    if (!review) return;
-    const btn = document.getElementById('analyzeBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Analyzing...';
-    try {
-      const res = await fetch('/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ review })
-      });
-      let data = {};
-      try { data = await res.json(); } catch (_) {}
-      if (!res.ok || data.error) throw new Error(data.error || 'Prediction failed. Please try again.');
-      showResult(data);
-    } catch (e) {
-      alert(e.message || 'Prediction failed. Please try again.');
-    }
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="search"></i> Analyze Review';
-    lucide.createIcons();
-  }
-
-  function showResult(data) {
-    const card    = document.getElementById('resultCard');
-    const verdict = String(data.verdict || '').trim().toUpperCase();
-    const isFake  = verdict === 'FAKE';
-    const isUnv   = verdict === 'UNVERIFIABLE';
-
-    card.classList.remove('fake', 'genuine', 'unverifiable');
-    if (isFake)    card.classList.add('fake');
-    else if (isUnv) card.classList.add('unverifiable');
-    else            card.classList.add('genuine');
-
-    const iconEl = document.getElementById('verdictIcon');
-    iconEl.setAttribute('data-lucide',
-      isFake ? 'alert-triangle' : isUnv ? 'help-circle' : 'check-circle'
-    );
-    lucide.createIcons({ nodes: [iconEl] });
-
-    const verdictText = document.getElementById('verdictText');
-    if (isUnv) {
-      verdictText.innerHTML = 'Cannot Determine' +
-        '<span style="display:block;font-size:13px;font-weight:500;color:#94a3b8;margin-top:4px;">' +
-        'Models strongly disagree — human review recommended</span>';
-    } else {
-      verdictText.textContent = isFake ? 'Fake Review Detected' : 'Genuine Review';
-    }
-
-    document.getElementById('metricFake').textContent      = data.confidence + '%';
-    document.getElementById('metricBert').textContent      = data.bert_score + '%';
-    document.getElementById('metricGnn').textContent       = data.gnn_score  + '%';
-    document.getElementById('metricHeuristic').textContent = data.heuristic_score + '%';
-
-    document.getElementById('reasonsTitle').textContent =
-      isFake ? 'Detected Signals' : isUnv ? 'Conflict Summary' : 'Authenticity Signals';
-    const list    = document.getElementById('reasonsList');
-    const reasons = Array.isArray(data.reasons) && data.reasons.length ? data.reasons : ['No explanation available.'];
-    const extra   = isUnv && data.divergence !== undefined
-      ? ['Model divergence score: ' + data.divergence + ' (threshold: 0.55)']
-      : [];
-    list.innerHTML = [...reasons, ...extra].map((r, i) =>
-      '<li style="animation-delay:' + (i * 0.08) + 's"><span class="reason-dot"></span>' + r + '</li>'
-    ).join('');
-
-    card.style.display = 'block';
-    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function switchSubMode(mode) {
-    document.getElementById('subPanelUrl').style.display  = mode === 'url'  ? 'block' : 'none';
-    document.getElementById('subPanelBulk').style.display = mode === 'bulk' ? 'block' : 'none';
-    document.getElementById('subBtnUrl').classList.toggle('active',  mode === 'url');
-    document.getElementById('subBtnBulk').classList.toggle('active', mode === 'bulk');
-    lucide.createIcons();
-  }
-
-  const DEMO_REVIEWS = [
-    "Amazing product!! Best purchase EVER!! Totally transformed my life!! 5 stars without hesitation!! Buy it NOW!!",
-    "I love this product. It is great and works perfectly. I love it. Great quality. Works great. Very satisfied.",
-    "Bought this for my office setup. The build quality feels premium and cable management is clean. Took 20 minutes to set up.",
-    "Returned after one week. The screen started flickering on day 3 and customer support was unhelpful.",
-    "Great product great price great quality great delivery great packaging great everything great great great.",
-    "Works as described. Battery life is decent, gets me through a full workday if I am not on video calls constantly. Charger feels a bit flimsy though."
-  ];
-
-  function loadDemoReviews() {
-    document.getElementById('bulkInput').value = DEMO_REVIEWS.join('\n\n---\n');
-  }
-
-  async function analyzeBulk() {
-    const reviews_text = document.getElementById('bulkInput').value.trim();
-    if (!reviews_text) { alert('Please paste some reviews first, or click Load Demo Reviews.'); return; }
-    const btn = document.getElementById('bulkBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Analysing reviews...';
-    document.getElementById('scrapeResult').style.display = 'none';
-    try {
-      const res = await fetch('/bulk-analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviews_text })
-      });
-      let data = {};
-      try { data = await res.json(); } catch (_) {}
-      if (!res.ok || data.error) throw new Error(data.error || 'Analysis failed.');
-      showScrapeResult(data);
-    } catch (e) {
-      alert(e.message || 'Analysis failed.');
-    }
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="layers"></i> Analyse All Reviews';
-    lucide.createIcons();
-  }
-
-  async function scanUrl() {
-    const url = document.getElementById('urlInput').value.trim();
-    if (!url) { alert('Please enter an Amazon or Flipkart product URL.'); return; }
-    const btn = document.getElementById('scanBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Scraping and analysing reviews...';
-    document.getElementById('scrapeResult').style.display = 'none';
-    try {
-      const res = await fetch('/scrape', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, max_reviews: 8 })
-      });
-      let data = {};
-      try { data = await res.json(); } catch (_) {}
-      if (!res.ok || data.error) throw new Error(data.error || 'Scraping failed. Please try again.');
-      showScrapeResult(data);
-    } catch (e) {
-      alert(e.message || 'Scraping failed. Please try again.');
-    }
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="scan-search"></i> Scan Product Reviews';
-    lucide.createIcons();
-  }
-
-  function showScrapeResult(data) {
-    const pct = data.fake_percentage || 0;
-    const level = pct >= 50 ? 'high' : (pct >= 25 ? 'mid' : 'low');
-    const icons  = { low: 'shield-check', mid: 'shield-alert', high: 'shield-x' };
-    const labels = { low: 'Low Risk Product', mid: 'Moderate Risk', high: 'High Risk — Likely Fake Reviews' };
-    const banner = document.getElementById('trustBanner');
-    banner.className = 'trust-banner ' + level;
-    const iconEl = document.getElementById('trustIcon').querySelector('i');
-    iconEl.setAttribute('data-lucide', icons[level]);
-    document.getElementById('trustVerdict').textContent = labels[level];
-    const plat = data.platform.charAt(0).toUpperCase() + data.platform.slice(1);
-    document.getElementById('trustSub').textContent = plat + ' · ' + data.total_reviews_analysed + ' reviews analysed';
-    document.getElementById('statFakePct').textContent = pct + '%';
-    document.getElementById('statTotal').textContent   = data.total_reviews_analysed;
-    document.getElementById('statTrust').textContent   = data.trust_score + '%';
-    const container = document.getElementById('reviewItems');
-    container.innerHTML = (data.reviews || []).map(r => {
-      const f = r.verdict === 'FAKE';
-      return '<div class="review-item ' + (f ? 'fake' : 'genuine') + '">' +
-        '<div class="review-item-head">' +
-          '<span class="review-item-badge"><i data-lucide="' + (f ? 'x' : 'check') + '"></i> ' + r.verdict + '</span>' +
-          '<span class="review-item-conf">' + r.confidence + '% confidence</span>' +
-        '</div>' +
-        '<div class="review-item-text">' + r.text + '</div>' +
-      '</div>';
-    }).join('');
-    const el = document.getElementById('scrapeResult');
-    el.style.display = 'block';
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    lucide.createIcons();
-  }
-</script>
+    <script src="/static/js/app.js"></script>
 </body>
 </html>
-

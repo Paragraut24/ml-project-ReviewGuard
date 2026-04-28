@@ -1,26 +1,283 @@
-# Virtual Environment
-mlproject/
-venv/
-__pycache__/
+# ReviewGuard - Security-focused .gitignore
 
-# Datasets (Do not push heavy data)
+# ============================================
+# CRITICAL: Never commit these files
+# ============================================
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+*.key
+*.pem
+*.p12
+secrets/
+config/secrets.json
+
+# API Keys and Tokens
+*token*
+*secret*
+*password*
+*credentials*
+
+# ============================================
+# Python
+# ============================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+mlproject/
+
+# ============================================
+# Machine Learning / Data Science
+# ============================================
+
+# Training data and datasets (keep only processed)
+data/raw/
+data/training/
+datasets/
+*.csv
+*.tsv
+*.json
+*.jsonl
 reviews.csv
 reviews_with_features.csv
 
-# Large Model Weights & Graph Binaries
-bert_model/pytorch_model.bin
+# Model checkpoints and training artifacts
+checkpoints/
+logs/
+runs/
+wandb/
+mlruns/
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+
+# EXCEPTION: Keep only production models (exclude large BERT model)
+!gnn_model_weighted.pt
+!graph_data.pt
+!scaler.pkl
 bert_model/model.safetensors
-bert_model/training_args.bin
-graph_data.pt
-gnn_model_weighted.pt
-scaler.pkl
 
-# OS Files
+# Notebooks and experiments
+notebooks/
+experiments/
+*.ipynb
+
+# ============================================
+# Development and Documentation
+# ============================================
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
-*.pyc
+Thumbs.db
 
-# Local secret/config files
-.env
-.env.*
-*.secrets.txt
-*Huggingface*.txt
+# Documentation build
+docs/_build/
+site/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.orig
+
+# ============================================
+# Project-specific exclusions
+# ============================================
+
+# Training scripts (keep only inference)
+train_*.py
+evaluate_*.py
+generate_*.py
+upload_*.py
+regenerate_*.py
+
+# Development files
+test_*.py
+*_test.py
+*_backup.*
+OLD_*
+BACKUP_*
+
+# Design and mockups
+stitch_reviewguard_ai_interface/
+*.sketch
+*.fig
+*.xd
+*.psd
+
+# Screenshots and demos
+static/screenshot*.png
+static/*.png
+static/127.0.0.1*.png
+
+# EXCEPTION: Keep charts
+!static/confusion_matrix.png
+!static/accuracy_chart.png
+
+# Documentation that reveals too much
+DESIGN.md
+ARCHITECTURE.md
+TRAINING.md
+RESEARCH.md
+NOTES.md
+
+# Implementation details
+NEW_UI_IMPLEMENTATION.md
+RATING_FEATURE_IMPLEMENTATION.md
+
+# ============================================
+# Deployment
+# ============================================
+
+# Local deployment configs
+docker-compose.override.yml
+.dockerignore
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+*.cache
+
+# ============================================
+# Git and Version Control
+# ============================================
+
+# Git
+.git/
+.gitattributes
+
+# GitHub
+.github/
+
+# ============================================
+# Node.js (if using any frontend tools)
+# ============================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================
+# Operating System
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# Kiro AI Assistant
+# ============================================
+
+.kiro/
+.sixth/
+
+# ============================================
+# IMPORTANT NOTES
+# ============================================
+
+# This .gitignore is designed to:
+# 1. Protect sensitive credentials and API keys
+# 2. Exclude training/development code
+# 3. Keep only production-ready files
+# 4. Prevent accidental exposure of proprietary logic
+# 5. Maintain security while allowing deployment
+
+# Before committing, always run:
+# git status
+# git diff
+# 
+# And verify no sensitive files are included!
+
