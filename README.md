@@ -30,19 +30,6 @@ ReviewGuard employs a sophisticated three-layer hybrid AI architecture to identi
 
 ---
 
-## 🚀 Live Demo
-
-**Try it now:** [https://your-deployment-url.com](https://your-deployment-url.com)
-
-### Quick Test
-
-1. Visit the [Workbench](https://your-deployment-url.com/workbench)
-2. Paste a product review
-3. Optionally add a star rating (1-5)
-4. Click "Execute Trace" to see the analysis
-
----
-
 ## 📊 Performance Metrics
 
 | Metric | Value |
