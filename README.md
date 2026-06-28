@@ -4,7 +4,6 @@
 
 ReviewGuard is an enterprise-grade platform that combines advanced machine learning techniques to detect fraudulent product reviews with industry-leading accuracy. Built for e-commerce platforms that demand absolute integrity.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://your-deployment-url.com)
 [![License](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/flask-3.0-lightgrey)](https://flask.palletsprojects.com/)
